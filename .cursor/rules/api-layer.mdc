@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+# API Layer
+
+## BFF integrations via generated API clients (Kubb)
+- The BFF calls multiple upstream APIs 
+- Generated artifacts are written under `src/shared/apis/<api>/`.
+- Do not edit generated files by hand; re-run generation via Kubb when the schema changes.
+
+
+## Generated folder layout (per API)
+Each API directory under `src/shared/apis/<api>/` contains:
+- `clients/`: Generated functions for each endpoint.
+- `mocks/`: Functions that create mocks of the API models for unit tests.
+- `models/`: TypeScript types for each API model, used by DTOs to map from API shapes to internal DTOs.
+
+## How services use generated clients
+- Services import from `@/shared/apis/<api>/clients` to call endpoints.
+- Services map `@/shared/apis/<api>/models` to internal DTOs in `@/shared/dtos`.
+- Unit tests use `@/shared/apis/<api>/mocks` for fast, deterministic fixtures.
+
+## tRPC contract and type imports
+- tRPC procedures call services (not generated clients) and expose typed inputs/outputs.
+- Frontend code should import types from the generated tRPC types (`RouterOutputs`, `RouterInputs`, `AppRouter`).
+- Never create local type definitions for API models; rely on DTOs on the server and tRPC types at the boundary.

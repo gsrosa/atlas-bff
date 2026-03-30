@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+# Code Standards
+
+## General Principles
+- Write concise, technical TypeScript code with accurate examples
+- Use functional and declarative programming patterns
+- Prefer iteration and modularization over code duplication
+- Use the `const` keyword for pure functions
+- Use descriptive variable and function/const names.
+
+## Absolute Imports
+- `src` folder is the base path for imports
+- Always use `@` symbol to refer to any file or folder within `src`
+- Example: `src/services/messages.service.ts` should be imported as `@/services/messages.service`
+
+## File Naming Convention - Kebab Case
+- Use Kebab Case for all file and folder names
+- Use lowercase letters with hyphens to separate words
+- Example:
+  - `myUtilFunction.ts` → `my-util-function.ts`

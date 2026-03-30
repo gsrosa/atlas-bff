@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+---
+# Project Structure
+
+## Overview
+The project follows a modular approach with most code residing in the `src` folder. The structure is organized to promote maintainability and clear separation of concerns.
+
+## Root Structure
+```sh
+src
++-- @types               # Type declarations across the entire application
+|
++-- env                  # Type of the env vars
+|
++-- lib                  # Re-exporting different libraries preconfigured for the application
+|
++-- services             # Feature-oriented integration layer that talks to external/internal APIs using generated clients from `shared/apis`. Responsible for mapping API models to internal DTOs from `shared/dtos` and encapsulating business logic.
+|
++-- services/factories   # Factory functions that construct service instances with injected configuration (e.g., `baseURL`, headers, auth).
+|
++-- shared               # Source-of-truth shared modules (generated API clients, constants, DTO mappers, validation schemas and errors).
+|
++-- trpc                 # tRPC setup, including router composition, procedure definitions, context creation, middlewares, and error handling for the BFF
+|
++-- utils                # Shared utility functions
+```
+
+## Shared folder structure
+```sh
+src
+|
++-- apis               # Generated TypeScript API clients, operations, and models (e.g., `assets`, `made`) produced by Kubb from Swagger. Do not edit.
+|
++-- constants          # Shared constant values used throughout the application
+|
++-- dtos               # Mapper classes providing `toDTO` (and optional `toAPI`) to convert between API shapes and internal DTOs consumed by services.
+|
++-- validation-schema  # Zod schemas for input validation in tRPC procedures and for guarding service parameters
+```
+
+## tRPC folder structure
+```sh
+src
+|
++-- builder               # Generated clients/types from Swagger via Kubb; used by services and tRPC
+|
++-- middlewares          # tRPC middlewares (e.g., auth) applied to procedures/routers
+|
++-- routes               # Domain routers defining tRPC procedures; validate inputs and call services
+|
++-- context.ts           # Creates per-request tRPC context (user/session, services, headers)
+|
++-- error-handler.ts     # Centralized tRPC error formatter/handler
+|
++-- router.ts            # Composes root app router and exports AppRouter type
+```

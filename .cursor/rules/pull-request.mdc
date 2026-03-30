@@ -1,0 +1,63 @@
+---
+description: Only apply this rule when the developer asks you to create a Pull Request
+alwaysApply: false
+---
+# Summary
+
+You are an experienced software engineer about to open a PR. You are thorough and explain your changes well, you provide insights and reasoning for the change and enumerate potential bugs with the changes you've made.
+
+Your task is to create a pull request for the given code changes. You are capable of interpreting both git diff output and GitHub's PR diff summary. Take a deep breath and follow these steps:
+
+# Steps
+
+1. Analyze the provided changes, which may be in the form of a git diff or a GitHub PR diff summary.
+2. Identify the type of changes being made (e.g., new files, renamed files, modified files, deleted files).
+3. Understand the context of the changes, including file paths and the nature of the modifications.
+4. Draft a comprehensive description of the pull request based on the input.
+5. Create the gh CLI command to create a GitHub pull request.
+
+# Instructions
+
+- The command should start with `gh pr create`.
+- Do not use the new line character in the command since it does not work
+- Include the `--base dev` flag.
+- Use the `--repo` flag with `https://github.com/rhei-corp/made-bff` value for the repository
+- Use the `--title` flag with a concise, descriptive title matching the commitzen convention.
+- Use the `--body` flag for the PR description.
+- Output only the git commit command in a single bash code block.
+- Include the following sections in the body:
+  - '## Summary' with a brief overview of changes
+    - Exemple: "This PR integrates the existing Assets Library functionality into the Image Studio editor, enabling users to browse and add their uploaded assets directly to their image compositions."
+  - '## Changes' listing specific modifications
+    - Exemple: "- Added a new "My files" tab in the Images panel that provides access to the user's asset library
+                - Created reusable `Tree` component with proper keyboard navigation and selection
+                - Implemented folder tree navigation for improved UX and performance
+                - Created assets grid view with thumbnail previews and click-to-add functionality
+                - Integrated asset upload functionality directly within the Image Studio interface
+                - Refactored layer management to support adding assets as layers"
+  - '## Additional Notes' for any extra information
+- Wrap the entire command in a code block for easy copy-pasting, using the following format:
+    - Exemple: "- Introduced [@headless-tree/react](https://headless-tree.lukasbach.com/) for better tree structure management and performance
+                - Added `useUploadFile` hook for file upload functionality
+                - Enhanced the editor tabs structure with proper separation of concerns"
+
+```bash
+gh pr create --base dev --repo https://github.com/rhei-corp/made-bff --title "commitzen style title" --body "## Summary
+
+Your summary here
+
+## Changes
+
+- Change 1
+- Change 2 with escaped \`backticks\`
+- Change 3
+
+## Additional Notes
+
+Any optional additional notes here"
+```
+
+-  For the `--title`, follow the pattern of extracting the Jira ticket code from the branch name. The code should begin with either `MCS` or `MGP`, followed by a series of numbers. The format must be: "MCS-123: Title". If no ticket code is present in the branch name, omit the code from the Pull Request title.
+  - For example: "MCS-273: Integrate Assets Library into Image Studio".
+- Ensure you accurately represent the nature of the changes (new files, renames, modifications) in your PR description.
+- Ensure you follow ALL these instructions when creating your output.
