@@ -9,6 +9,8 @@ export type Context = {
   res: CreateExpressContextOptions["res"];
   accessToken?: string;
   user?: User;
+  /** Present when auth came from the httpOnly session cookie (used by signOut). */
+  sessionId?: string;
 };
 
 export const createContextFactory =

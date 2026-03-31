@@ -11,7 +11,8 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
   const r = Router();
 
   /**
-   * Server-Sent Events stream of AI tokens for plan generation. Requires `Authorization: Bearer <supabase access token>`.
+   * Server-Sent Events stream of AI tokens for plan generation.
+   * Auth: httpOnly **session cookie** (same as tRPC) or `Authorization: Bearer <access token>`.
    * Events: `{ type: "text", delta: string }`, then `{ type: "done" }`, or `{ type: "error", message: string }`.
    */
   r.post("/stream", requireBearerAuth(env), async (req, res) => {

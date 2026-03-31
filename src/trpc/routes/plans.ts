@@ -1,35 +1,35 @@
-import * as plansService from "@/services/plans.service";
+import * as tripPlansService from "@/services/trip-plans.service";
 import {
-  createPlanInputSchema,
-  listPlansInputSchema,
-  patchPlanInputSchema,
-  planIdInputSchema,
-} from "@/shared/validation-schema/plans";
+  createTripPlanInputSchema,
+  listTripPlansInputSchema,
+  patchTripPlanInputSchema,
+  tripPlanIdInputSchema,
+} from "@/shared/validation-schema/trip-plans";
 
 import { protectedProcedure, router } from "../router.js";
 
 export const plansRouter = router({
-  list: protectedProcedure.input(listPlansInputSchema).query(async ({ ctx, input }) => {
-    return plansService.listPlans(ctx.env, ctx.accessToken!, input.status);
+  list: protectedProcedure.input(listTripPlansInputSchema).query(async ({ ctx, input }) => {
+    return tripPlansService.listTripPlans(ctx.env, ctx.accessToken!, input.limit);
   }),
 
-  create: protectedProcedure.input(createPlanInputSchema).mutation(async ({ ctx, input }) => {
-    return plansService.createPlan(ctx.env, ctx.accessToken!, ctx.user!.id, input);
+  create: protectedProcedure.input(createTripPlanInputSchema).mutation(async ({ ctx, input }) => {
+    return tripPlansService.createTripPlan(ctx.env, ctx.accessToken!, ctx.user!.id, input);
   }),
 
-  getById: protectedProcedure.input(planIdInputSchema).query(async ({ ctx, input }) => {
-    return plansService.getPlanById(ctx.env, ctx.accessToken!, input.id);
+  getById: protectedProcedure.input(tripPlanIdInputSchema).query(async ({ ctx, input }) => {
+    return tripPlansService.getTripPlanById(ctx.env, ctx.accessToken!, input.id);
   }),
 
   update: protectedProcedure
-    .input(planIdInputSchema.merge(patchPlanInputSchema))
+    .input(tripPlanIdInputSchema.merge(patchTripPlanInputSchema))
     .mutation(async ({ ctx, input }) => {
       const { id, ...patch } = input;
-      return plansService.updatePlan(ctx.env, ctx.accessToken!, id, patch);
+      return tripPlansService.updateTripPlan(ctx.env, ctx.accessToken!, id, patch);
     }),
 
-  delete: protectedProcedure.input(planIdInputSchema).mutation(async ({ ctx, input }) => {
-    await plansService.deletePlan(ctx.env, ctx.accessToken!, input.id);
+  delete: protectedProcedure.input(tripPlanIdInputSchema).mutation(async ({ ctx, input }) => {
+    await tripPlansService.deleteTripPlan(ctx.env, ctx.accessToken!, input.id);
     return { ok: true as const };
   }),
 });

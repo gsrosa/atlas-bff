@@ -1,0 +1,2 @@
+-- Optional seed data. Loaded on `supabase db reset` (local), not on `supabase db push` (remote).
+-- Add INSERT statements here for local fixtures if needed.

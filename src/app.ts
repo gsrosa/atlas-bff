@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
 import type { Env } from "@/env/env";
+import { createMeRouter } from "@/http/me-router";
 import { createPlanStreamRouter } from "@/http/plan-stream-router";
 import { createContextFactory } from "@/trpc/context";
 import { trpcOnError } from "@/trpc/error-handler";
@@ -48,6 +49,8 @@ export const createApp = (env: Env): Express => {
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
+
+  app.use(createMeRouter(env));
 
   app.use("/plans", planStreamLimiter, createPlanStreamRouter(env));
 

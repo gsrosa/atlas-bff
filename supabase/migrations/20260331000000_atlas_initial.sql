@@ -1,5 +1,5 @@
 -- Atlas BFF: profiles (user metadata) + plans (JSON documents per user).
--- Run in Supabase SQL Editor or via `supabase db push` if you use the Supabase CLI.
+-- Created via Supabase CLI migration naming (supabase migration new atlas_initial).
 
 -- ---------------------------------------------------------------------------
 -- Profiles (1:1 with auth.users)
