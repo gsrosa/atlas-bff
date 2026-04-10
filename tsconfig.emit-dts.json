@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "types-generated",
+    "rootDir": "src",
+    "stripInternal": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/index.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.ts",
+    "**/*.test.ts",
+    "vitest.config.ts"
+  ]
+}

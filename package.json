@@ -7,13 +7,19 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./trpc": {
+      "types": "./types-generated/trpc/export-types.d.ts",
+      "import": "./src/trpc/export-types.stub.js",
+      "default": "./src/trpc/export-types.stub.js"
     }
   },
   "types": "./dist/index.d.ts",
   "description": "Atlas backend-for-frontend — Express + tRPC with Supabase auth, users, and plans",
   "scripts": {
+    "prepare": "pnpm run build",
     "dev": "tsx watch src/index.ts",
-    "build": "tsup",
+    "build": "tsup && tsc -p tsconfig.emit-dts.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
