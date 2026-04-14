@@ -20,7 +20,7 @@ const envSchema = z.object({
     (v) => (v === "" || v === undefined ? undefined : v),
     z.string().min(1).optional(),
   ),
-  GEMINI_MODEL: z.string().default("gemini-2.0-flash"),
+  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   CREDITS_TRIP_PLAN_COST: z.coerce.number().int().min(0).default(0),
   CREDITS_ALLOW_SELF_TOPUP: z.preprocess(
     (val) => val === true || val === "true" || val === "1",

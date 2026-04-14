@@ -123,6 +123,9 @@ export const updateTripPlan = async (
   if (input.departureAt !== undefined) updates.departure_at = input.departureAt;
   if (input.arrivalAt !== undefined) updates.arrival_at = input.arrivalAt;
   if (input.flightNumbers !== undefined) updates.flight_numbers = input.flightNumbers;
+  if (input.flights !== undefined) {
+    updates.flight_numbers = input.flights.map((f) => f.flightNumber).filter(Boolean);
+  }
   if (input.daysCount !== undefined) updates.days_count = input.daysCount;
   if (input.destination !== undefined) updates.destination = input.destination;
   if (input.destinationCountry !== undefined) updates.destination_country = input.destinationCountry;

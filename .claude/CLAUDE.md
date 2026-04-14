@@ -52,3 +52,21 @@ export const plansRouter = router({
 - Postgres via `postgres` package, accessed through Supabase REST or direct SQL
 - Migrations in `scripts/`, applied via `pnpm db:migrate`
 - Redis (ioredis) for caching/rate limiting
+
+## AI Engineering Infrastructure (.ai/)
+
+See `.ai/README.md` for the full overview. Key sections:
+
+### Rules — read before writing any code
+- `.ai/rules/core.md` — non-negotiable rules (imports, naming, YAGNI)
+- `.ai/rules/naming.md` — naming conventions
+- `.ai/rules/structure.md` — folder structure rules
+- `.ai/rules/testing.md` — testing conventions
+
+### Architecture Decisions — read when touching affected areas
+- `.ai/decisions/index.md` — table of all ADRs
+- `.ai/decisions/004-bff-ai-orchestration.md` — BFF as AI orchestration layer
+- `.ai/decisions/002-global-state.md` — Trip state ownership
+
+### Active Context — read when continuing an in-progress feature
+- `.ai/context/current.md` — last session state, next steps, open decisions

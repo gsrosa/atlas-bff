@@ -1,11 +1,20 @@
 import { z } from "zod";
 
+export const flightEntrySchema = z.object({
+  flightNumber: z.string().max(32),
+  departureDate: z.string().optional(),
+  arrivalDate: z.string().optional(),
+});
+
+export type FlightEntry = z.infer<typeof flightEntrySchema>;
+
 export const createTripPlanInputSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   aiSuggestedTitle: z.string().min(1).max(500).optional(),
   departureAt: z.string().min(1).optional(),
   arrivalAt: z.string().min(1).optional(),
   flightNumbers: z.array(z.string().max(32)).max(40).default([]),
+  flights: z.array(flightEntrySchema).max(20).optional(),
   daysCount: z.number().int().positive().max(366).optional(),
   destination: z.string().min(1).max(500).optional(),
   destinationCountry: z.string().length(2).optional(),
