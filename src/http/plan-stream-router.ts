@@ -26,7 +26,10 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
     const parsed = checklistInputSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
     try {
-      const result = await generateChecklistFromAnswers(env, parsed.data.answers);
+      const result = await generateChecklistFromAnswers(env, parsed.data.answers, {
+        accessToken: req.atlasAccessToken,
+        userId: req.atlasUser?.id,
+      });
       res.json(result);
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : "Generation failed" });
@@ -44,6 +47,10 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
         parsed.data.answers,
         parsed.data.aiQuestions,
         parsed.data.aiAnswers,
+        {
+          accessToken: req.atlasAccessToken,
+          userId: req.atlasUser?.id,
+        },
       );
       res.json(result);
     } catch (err) {

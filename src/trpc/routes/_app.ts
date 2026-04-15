@@ -5,6 +5,7 @@ import { router } from "../router.js";
 import { authRouter } from "./auth.js";
 import { creditsRouter } from "./credits.js";
 import { plansRouter } from "./plans.js";
+import { travelerProfileRouter } from "./traveler-profile.js";
 import { usersRouter } from "./users.js";
 
 export const appRouter = router({
@@ -12,6 +13,7 @@ export const appRouter = router({
   users: usersRouter,
   credits: creditsRouter,
   plans: plansRouter,
+  travelerProfile: travelerProfileRouter,
 });
 
 export type AppRouter = typeof appRouter;

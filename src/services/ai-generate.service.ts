@@ -11,6 +11,8 @@ import {
   type TripPlanOutput,
 } from "@/shared/validation-schema/ai-output";
 import type { AnswerMap, AiQuestionInput } from "@/shared/validation-schema/planner-input";
+import { buildAIContextBlock } from "@/services/traveler-profile-ai-context";
+import { getTravelerPreferences } from "@/services/traveler-profile.service";
 
 // ─── AI client ────────────────────────────────────────────────────────────────
 
@@ -207,10 +209,21 @@ Rules:
 export const generateChecklistFromAnswers = async (
   env: Env,
   answers: AnswerMap,
+  opts?: { accessToken?: string; userId?: string },
 ): Promise<ChecklistOutput> => {
   const google = buildGoogle(env);
+  const baseSummary = buildAnswerSummary(answers);
+  let mergedContext = buildAIContextBlock(null, baseSummary);
+  if (opts?.accessToken && opts?.userId) {
+    try {
+      const { preferences } = await getTravelerPreferences(env, opts.accessToken, opts.userId);
+      mergedContext = buildAIContextBlock(preferences, baseSummary);
+    } catch {
+      mergedContext = buildAIContextBlock(null, baseSummary);
+    }
+  }
   const userPrompt =
-    `Here is the traveller's complete base profile:\n\n${buildAnswerSummary(answers)}\n\n` +
+    `${mergedContext}\n\n` +
     `Generate 5–7 personalised follow-up questions.\n\n` +
     `Priorities:\n` +
     `1) Activities and experiences that fit their timing, climate, and regions.\n` +
@@ -235,13 +248,28 @@ export const generateTripPlanFromAnswers = async (
   answers: AnswerMap,
   aiQuestions: AiQuestionInput[],
   aiAnswers: AnswerMap,
+  opts?: { accessToken?: string; userId?: string },
 ): Promise<TripPlanOutput> => {
   const google = buildGoogle(env);
   const aiSummary = buildAiAnswerSummary(aiQuestions, aiAnswers);
+  const baseSummary = buildAnswerSummary(answers);
+  const tripCore =
+    `BASE PREFERENCES:\n${baseSummary}\n\n` +
+    `PERSONALISED DETAILS (from follow-up):\n${aiSummary || "None provided"}`;
+
+  let mergedContext = tripCore;
+  if (opts?.accessToken && opts?.userId) {
+    try {
+      const { preferences } = await getTravelerPreferences(env, opts.accessToken, opts.userId);
+      mergedContext = buildAIContextBlock(preferences, tripCore);
+    } catch {
+      mergedContext = tripCore;
+    }
+  }
+
   const userPrompt =
     `Create a complete trip plan for the following traveller:\n\n` +
-    `BASE PREFERENCES:\n${buildAnswerSummary(answers)}\n\n` +
-    `PERSONALISED DETAILS (from follow-up):\n${aiSummary || "None provided"}\n\n` +
+    `${mergedContext}\n\n` +
     `Use all of the above to select the best destination and build the full day-by-day plan.`;
 
   const { object } = await generateObject({
