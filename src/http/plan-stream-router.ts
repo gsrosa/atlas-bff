@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { Env } from "@/env/env";
 import { requireBearerAuth } from "@/middleware/require-bearer-auth";
+import * as creditsService from "@/services/credits.service";
 import {
   applyPlanModification,
   editTripPlan,
@@ -139,8 +140,29 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       request: z.string().min(1).max(10_000),
     }).safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+
+    const MODIFY_COST = 3;
+    const userId = req.atlasUser?.id;
+    const accessToken = req.atlasAccessToken;
+
+    if (userId && accessToken) {
+      const { balance } = await creditsService.getBalance(env, accessToken, userId);
+      if (balance < MODIFY_COST) {
+        res.status(402).json({ error: "INSUFFICIENT_CREDITS", required: MODIFY_COST, available: balance });
+        return;
+      }
+    }
+
     try {
       const result = await applyPlanModification(env, parsed.data.itinerary, parsed.data.request);
+      if (userId && accessToken) {
+        await creditsService.applyCredit(env, {
+          userId,
+          delta: -MODIFY_COST,
+          reason: "plan_modify",
+          referenceType: "trip_plan",
+        });
+      }
       res.json(result);
     } catch (err) {
       res.status(500).json({ error: err instanceof Error ? err.message : "Modification failed" });

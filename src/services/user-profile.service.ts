@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 
 import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import type { Env } from "@/env/env";
+import * as creditsService from "@/services/credits.service";
 import type { ProfileDTO } from "@/shared/dtos/profile";
 import { patchProfileInputSchema } from "@/shared/validation-schema/user-profile";
 import type { z } from "zod";
@@ -25,12 +26,16 @@ async function ensureProfileAndCreditsRows(
     throw new TRPCError({ code: "BAD_REQUEST", message: pErr.message, cause: pErr });
   }
 
-  const { error: cErr } = await svc.from("user_credits").upsert(
-    { user_id: userId, balance: 0 },
-    { onConflict: "user_id" },
-  );
+  const { data: creditRows, error: cErr } = await svc
+    .from("user_credits")
+    .upsert({ user_id: userId, balance: 0 }, { onConflict: "user_id", ignoreDuplicates: true })
+    .select("user_id");
   if (cErr) {
     throw new TRPCError({ code: "BAD_REQUEST", message: cErr.message, cause: cErr });
+  }
+  // Row was inserted (not a duplicate) — grant signup bonus
+  if (creditRows && creditRows.length > 0) {
+    await creditsService.addFundsForUser(env, userId, 20, "signup_bonus");
   }
 }
 
