@@ -19,6 +19,9 @@ import { getTravelerPreferences } from "@/services/traveler-profile.service";
 const buildGoogle = (env: Env) =>
   createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY! });
 
+/** Disable thinking for generateObject calls to ensure clean JSON output. */
+const NO_THINKING = { google: { thinkingConfig: { thinkingBudget: 0 } } } as const;
+
 // ─── Prompt helpers ───────────────────────────────────────────────────────────
 
 function fmt(value: string | string[] | undefined): string {
@@ -211,7 +214,6 @@ export const generateChecklistFromAnswers = async (
   answers: AnswerMap,
   opts?: { accessToken?: string; userId?: string },
 ): Promise<ChecklistOutput> => {
-  const google = buildGoogle(env);
   const baseSummary = buildAnswerSummary(answers);
   let mergedContext = buildAIContextBlock(null, baseSummary);
   if (opts?.accessToken && opts?.userId) {
@@ -233,7 +235,8 @@ export const generateChecklistFromAnswers = async (
     `Do not re-ask the base fields.`;
 
   const { object } = await generateObject({
-    model: google(env.GEMINI_MODEL),
+    model: buildGoogle(env)(env.GEMINI_MODEL),
+    providerOptions: NO_THINKING,
     schema: checklistOutputSchema,
     system: CHECKLIST_SYSTEM_PROMPT,
     prompt: userPrompt,
@@ -250,7 +253,6 @@ export const generateTripPlanFromAnswers = async (
   aiAnswers: AnswerMap,
   opts?: { accessToken?: string; userId?: string },
 ): Promise<TripPlanOutput> => {
-  const google = buildGoogle(env);
   const aiSummary = buildAiAnswerSummary(aiQuestions, aiAnswers);
   const baseSummary = buildAnswerSummary(answers);
   const tripCore =
@@ -273,11 +275,12 @@ export const generateTripPlanFromAnswers = async (
     `Use all of the above to select the best destination and build the full day-by-day plan.`;
 
   const { object } = await generateObject({
-    model: google(env.GEMINI_MODEL),
+    model: buildGoogle(env)(env.GEMINI_MODEL),
+    providerOptions: NO_THINKING,
     schema: tripPlanOutputSchema,
     system: TRIP_PLAN_SYSTEM_PROMPT,
     prompt: userPrompt,
-    maxOutputTokens: 8192,
+    maxOutputTokens: 32768,
     temperature: 0.7,
   });
   return object;
@@ -296,13 +299,13 @@ export const editTripPlan = async (
   env: Env,
   opts: GenerateOptions,
 ): Promise<TripPlanOutput> => {
-  const google = buildGoogle(env);
   const { object } = await generateObject({
-    model: google(env.GEMINI_MODEL),
+    model: buildGoogle(env)(env.GEMINI_MODEL),
+    providerOptions: NO_THINKING,
     schema: tripPlanOutputSchema,
     system: opts.systemPrompt,
     prompt: opts.userPrompt,
-    maxOutputTokens: opts.maxTokens ?? 8192,
+    maxOutputTokens: opts.maxTokens ?? 32768,
     temperature: opts.temperature ?? 0.3,
   });
   return object;
@@ -321,7 +324,6 @@ export const enrichHotelInfo = async (
   checkinDate?: string,
   checkoutDate?: string,
 ): Promise<HotelEnrichOutput> => {
-  const google = buildGoogle(env);
   const userPrompt =
     `Hotel: ${name}\nDestination: ${destination}` +
     (checkinDate ? `\nCheck-in: ${checkinDate}` : "") +
@@ -329,7 +331,8 @@ export const enrichHotelInfo = async (
     `\n\nReturn structured information about this hotel.`;
 
   const { object } = await generateObject({
-    model: google(env.GEMINI_MODEL),
+    model: buildGoogle(env)(env.GEMINI_MODEL),
+    providerOptions: NO_THINKING,
     schema: hotelEnrichOutputSchema,
     system: HOTEL_ENRICH_SYSTEM_PROMPT,
     prompt: userPrompt,
@@ -358,13 +361,13 @@ export const applyPlanModification = async (
   itinerary: Record<string, unknown>,
   request: string,
 ): Promise<TripPlanOutput> => {
-  const google = buildGoogle(env);
   const { object } = await generateObject({
-    model: google(env.GEMINI_MODEL),
+    model: buildGoogle(env)(env.GEMINI_MODEL),
+    providerOptions: NO_THINKING,
     schema: tripPlanOutputSchema,
     system: PLAN_MODIFY_SYSTEM_PROMPT,
     prompt: `Current trip plan:\n${JSON.stringify(itinerary, null, 2)}\n\nRequested change:\n${request}`,
-    maxOutputTokens: 8192,
+    maxOutputTokens: 32768,
     temperature: 0.3,
   });
   return object;
