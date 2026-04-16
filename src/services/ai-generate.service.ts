@@ -159,7 +159,7 @@ Return ONLY valid JSON matching this exact schema (types described in TypeScript
       "attractions": [
         {
           "name": string,
-          "address": string (optional, street-level when known),
+          "address": string (strongly preferred — full street-level address, e.g. "Rua Augusta 1500, São Paulo" or "10 Downing St, London SW1A 2AA"),
           "category": string (optional, e.g. museum, viewpoint, hike),
           "notes": string (optional),
           "price": { "amount": number, "currency": string } (optional),
@@ -186,7 +186,7 @@ Return ONLY valid JSON matching this exact schema (types described in TypeScript
 
 Rules:
 - **Every day must set "city"** explicitly — multi-city trips must change city across days as appropriate.
-- **Attractions** are the primary content per day: realistic names, optional address, optional price and **averageMinutesSpent** (minutes, not hours).
+- **Attractions** are the primary content per day: realistic names, **always include a full street-level address** (street number, street name, city — e.g. "Av. Paulista, 1578, São Paulo"), optional price and **averageMinutesSpent** (minutes, not hours). The address is critical for map routing — omit only if the place has no fixed address (e.g. a hiking trail; use a descriptive location instead).
 - Choose destination(s) that fit **climate**, **regions**, **when-traveling**, and **daily-investment**. Multi-region: logical routing across days with clear city labels.
 - If the traveller provided a destination in mind, prioritise it unless constraints conflict.
 - Trip length defaults: weekend=2, short=5, week=7, long=12, extended=15 days. If the profile includes exact dates or a custom day count, use that exact number of days.
