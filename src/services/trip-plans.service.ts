@@ -30,17 +30,20 @@ export const listTripPlans = async (
   env: Env,
   accessToken: string,
   limit: number,
-): Promise<{ plans: TripPlanDTO[] }> => {
+  page: number,
+): Promise<{ plans: TripPlanDTO[]; total: number; page: number; limit: number }> => {
+  const from = page * limit;
+  const to = from + limit - 1;
   const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client
+  const { data, error, count } = await client
     .from("trip_plans")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("updated_at", { ascending: false })
-    .limit(limit);
+    .range(from, to);
   if (error) {
     throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
   }
-  return { plans: (data ?? []) as TripPlanDTO[] };
+  return { plans: (data ?? []) as TripPlanDTO[], total: count ?? 0, page, limit };
 };
 
 export const createTripPlan = async (

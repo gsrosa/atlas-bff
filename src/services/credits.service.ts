@@ -26,18 +26,21 @@ export const listTransactions = async (
   accessToken: string,
   userId: string,
   limit: number,
-): Promise<{ transactions: CreditTransactionDTO[] }> => {
+  page: number,
+): Promise<{ transactions: CreditTransactionDTO[]; total: number; page: number; limit: number }> => {
+  const from = page * limit;
+  const to = from + limit - 1;
   const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client
+  const { data, error, count } = await client
     .from("credit_transactions")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .range(from, to);
   if (error) {
     throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
   }
-  return { transactions: (data ?? []) as CreditTransactionDTO[] };
+  return { transactions: (data ?? []) as CreditTransactionDTO[], total: count ?? 0, page, limit };
 };
 
 type ApplyParams = {

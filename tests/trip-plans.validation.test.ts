@@ -23,9 +23,16 @@ describe("trip plan Zod schemas", () => {
     ).toThrow();
   });
 
-  it("listTripPlansInputSchema defaults limit", () => {
-    expect(listTripPlansInputSchema.parse({})).toEqual({ limit: 50 });
-    expect(listTripPlansInputSchema.parse({ limit: 10 })).toEqual({ limit: 10 });
+  it("listTripPlansInputSchema defaults limit to 10 and page to 0", () => {
+    expect(listTripPlansInputSchema.parse({})).toEqual({ limit: 10, page: 0 });
+  });
+
+  it("listTripPlansInputSchema accepts explicit limit and page", () => {
+    expect(listTripPlansInputSchema.parse({ limit: 20, page: 3 })).toEqual({ limit: 20, page: 3 });
+  });
+
+  it("listTripPlansInputSchema rejects negative page", () => {
+    expect(() => listTripPlansInputSchema.parse({ page: -1 })).toThrow();
   });
 
   it("tripPlanIdInputSchema accepts uuid", () => {

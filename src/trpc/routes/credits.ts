@@ -16,9 +16,12 @@ export const creditsRouter = router({
   }),
 
   list: protectedProcedure
-    .input(z.object({ limit: z.number().int().positive().max(200).optional().default(50) }))
+    .input(z.object({
+      limit: z.number().int().positive().max(200).optional().default(10),
+      page: z.number().int().min(0).optional().default(0),
+    }))
     .query(async ({ ctx, input }) => {
-      return creditsService.listTransactions(ctx.env, ctx.accessToken!, ctx.user!.id, input.limit);
+      return creditsService.listTransactions(ctx.env, ctx.accessToken!, ctx.user!.id, input.limit, input.page);
     }),
 
   addFunds: protectedProcedure.input(addFundsInputSchema).mutation(async ({ ctx, input }) => {

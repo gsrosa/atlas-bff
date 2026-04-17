@@ -10,7 +10,7 @@ import { protectedProcedure, router } from "../router.js";
 
 export const plansRouter = router({
   list: protectedProcedure.input(listTripPlansInputSchema).query(async ({ ctx, input }) => {
-    return tripPlansService.listTripPlans(ctx.env, ctx.accessToken!, input.limit);
+    return tripPlansService.listTripPlans(ctx.env, ctx.accessToken!, input.limit, input.page);
   }),
 
   create: protectedProcedure.input(createTripPlanInputSchema).mutation(async ({ ctx, input }) => {

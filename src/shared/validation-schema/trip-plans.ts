@@ -25,7 +25,8 @@ export const createTripPlanInputSchema = z.object({
 export const patchTripPlanInputSchema = createTripPlanInputSchema.partial();
 
 export const listTripPlansInputSchema = z.object({
-  limit: z.number().int().positive().max(100).optional().default(50),
+  limit: z.number().int().positive().max(100).optional().default(10),
+  page: z.number().int().min(0).optional().default(0),
 });
 
 export const tripPlanIdInputSchema = z.object({
