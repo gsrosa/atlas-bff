@@ -3,6 +3,10 @@ import { generateObject } from "ai";
 
 import type { Env } from "@/env/env";
 import {
+  deriveDayCountFromAnswers,
+  deriveDayCountFromHotels,
+} from "@/lib/credit-utils";
+import {
   checklistOutputSchema,
   hotelEnrichOutputSchema,
   tripPlanOutputSchema,
@@ -10,7 +14,7 @@ import {
   type HotelEnrichOutput,
   type TripPlanOutput,
 } from "@/shared/validation-schema/ai-output";
-import type { AnswerMap, AiQuestionInput } from "@/shared/validation-schema/planner-input";
+import type { AnswerMap, AiQuestionInput, TripDetails } from "@/shared/validation-schema/planner-input";
 import { buildAIContextBlock } from "@/services/traveler-profile-ai-context";
 import { getTravelerPreferences } from "@/services/traveler-profile.service";
 
@@ -56,7 +60,7 @@ function isNearFuture(date: Date, withinDays = 45): boolean {
   return diffDays >= 0 && diffDays <= withinDays;
 }
 
-function buildAnswerSummary(answers: AnswerMap): string {
+function buildAnswerSummary(answers: AnswerMap, tripDetails?: TripDetails): string {
   const dateRange = parseDateRange(answers["exact-date-range"]);
 
   let tripLength: string;
@@ -97,7 +101,7 @@ function buildAnswerSummary(answers: AnswerMap): string {
     `- When traveling: ${travelDates}`,
     `- Daily investment (all-in / day): ${dailyInvestment}`,
     `- Climate preference: ${fmt(answers["climate"])}`,
-    `- Regions: ${fmt(answers["regions"])}`,
+    `- Regions: ${fmt(answers["regions"])}${answers["country-name"] ? ` — specific country: ${answers["country-name"]}` : ""}`,
     `- Accommodation types: ${hasAccommodation ? accommodationTypes : "Not specified — recommend best-fit options per area"}`,
     `- Travel pace: ${fmt(answers["travel-pace"])}`,
     `- Special requirements: ${fmt(answers["special-requirements"]) || "None"}`,
@@ -106,7 +110,37 @@ function buildAnswerSummary(answers: AnswerMap): string {
   ];
 
   if (weatherNote) lines.push(weatherNote);
+  appendTripDetails(lines, tripDetails);
   return lines.join("\n");
+}
+
+function appendTripDetails(lines: string[], tripDetails: TripDetails | undefined): void {
+  if (!tripDetails) return;
+  if (tripDetails.hotels?.length) {
+    const summary = tripDetails.hotels
+      .map((h) => {
+        const dates =
+          h.checkinDate && h.checkoutDate
+            ? ` (check-in: ${h.checkinDate}, check-out: ${h.checkoutDate})`
+            : "";
+        const addr = h.address?.trim() ? `, address: ${h.address.trim()}` : "";
+        return `${h.name}${dates}${addr}`;
+      })
+      .join("; ");
+    lines.push(`- Pre-booked hotels: ${summary}`);
+  }
+  if (tripDetails.flights?.length) {
+    const summary = tripDetails.flights
+      .map((f) =>
+        f.departureDate && f.arrivalDate
+          ? `${f.flightNumber} (${f.departureDate} → ${f.arrivalDate})`
+          : f.departureDate
+            ? `${f.flightNumber} (departs ${f.departureDate})`
+            : f.flightNumber,
+      )
+      .join("; ");
+    lines.push(`- Pre-booked flights: ${summary}`);
+  }
 }
 
 function buildAiAnswerSummary(questions: AiQuestionInput[], answers: AnswerMap): string {
@@ -189,12 +223,14 @@ Return ONLY valid JSON matching this exact schema (types described in TypeScript
 
 Rules:
 - **Every day must set "city"** explicitly — multi-city trips must change city across days as appropriate.
+- **Each "dayNumber" must be unique** — the "days" array must contain exactly one object per day. Never emit two objects with the same "dayNumber". Every field (attractions, meals, transportation, lodging) belongs in that single object.
 - **Attractions** are the primary content per day: realistic names, **always include a full street-level address** (street number, street name, city — e.g. "Av. Paulista, 1578, São Paulo"), optional price and **averageMinutesSpent** (minutes, not hours). The address is critical for map routing — omit only if the place has no fixed address (e.g. a hiking trail; use a descriptive location instead).
 - Choose destination(s) that fit **climate**, **regions**, **when-traveling**, and **daily-investment**. Multi-region: logical routing across days with clear city labels.
 - If the traveller provided a destination in mind, prioritise it unless constraints conflict.
 - Trip length defaults: weekend=2, short=5, week=7, long=12, extended=15 days. If the profile includes exact dates or a custom day count, use that exact number of days.
 - **Travel pace**: relaxed → fewer, deeper attractions; intensive → more stops with shorter averageMinutesSpent.
 - Weather must align with climate + travel window. If a WEATHER FORECAST note is in the profile, use real forecast data for those dates.
+- "temperatureRangeCelsius" must use the Unicode degree symbol: e.g. "20–28°C". Never use escape sequences or ASCII approximations.
 - paidAttractions: fee-based experiences with realistic USD strings and short notes.
 - JSON only — no markdown, no code fences, no extra prose outside the JSON object.
 - Use follow-up answers heavily for activities and priorities.
@@ -213,8 +249,9 @@ export const generateChecklistFromAnswers = async (
   env: Env,
   answers: AnswerMap,
   opts?: { accessToken?: string; userId?: string },
+  tripDetails?: TripDetails,
 ): Promise<ChecklistOutput> => {
-  const baseSummary = buildAnswerSummary(answers);
+  const baseSummary = buildAnswerSummary(answers, tripDetails);
   let mergedContext = buildAIContextBlock(null, baseSummary);
   if (opts?.accessToken && opts?.userId) {
     try {
@@ -252,9 +289,10 @@ export const generateTripPlanFromAnswers = async (
   aiQuestions: AiQuestionInput[],
   aiAnswers: AnswerMap,
   opts?: { accessToken?: string; userId?: string },
+  tripDetails?: TripDetails,
 ): Promise<TripPlanOutput> => {
   const aiSummary = buildAiAnswerSummary(aiQuestions, aiAnswers);
-  const baseSummary = buildAnswerSummary(answers);
+  const baseSummary = buildAnswerSummary(answers, tripDetails);
   const tripCore =
     `BASE PREFERENCES:\n${baseSummary}\n\n` +
     `PERSONALISED DETAILS (from follow-up):\n${aiSummary || "None provided"}`;
@@ -269,10 +307,16 @@ export const generateTripPlanFromAnswers = async (
     }
   }
 
+  const hotelDays = tripDetails?.hotels ? deriveDayCountFromHotels(tripDetails.hotels) : null;
+  const effectiveDays = hotelDays ?? deriveDayCountFromAnswers(answers);
+  const dayInstruction = effectiveDays
+    ? `\nGenerate EXACTLY ${effectiveDays} days — the "days" array must have exactly ${effectiveDays} objects.`
+    : "";
+
   const userPrompt =
     `Create a complete trip plan for the following traveller:\n\n` +
     `${mergedContext}\n\n` +
-    `Use all of the above to select the best destination and build the full day-by-day plan.`;
+    `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
 
   const { object } = await generateObject({
     model: buildGoogle(env)(env.GEMINI_MODEL),
