@@ -11,4 +11,5 @@ export const patchProfileInputSchema = z.object({
   bio: z.string().max(2000).optional().or(z.literal("")),
   country: z.string().length(2).optional(),
   avatar_url: z.string().url().max(2048).optional().or(z.literal("")),
+  preferred_locale: z.enum(["en-US", "pt-BR", "es-ES"]).optional().or(z.null()),
 });

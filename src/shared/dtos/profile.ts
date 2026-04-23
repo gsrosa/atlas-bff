@@ -9,6 +9,7 @@ export type ProfileDTO = {
   bio: string | null;
   country: string | null;
   avatar_url: string | null;
+  preferred_locale: string | null;
   credits_balance: number;
   created_at: string;
   updated_at: string;

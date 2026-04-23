@@ -84,6 +84,7 @@ export const getProfile = async (
     bio: (row.bio as string | null) ?? null,
     country: (row.country as string | null) ?? null,
     avatar_url: (row.avatar_url as string | null) ?? null,
+    preferred_locale: (row.preferred_locale as string | null) ?? null,
     credits_balance: Number(credits?.balance ?? 0),
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
@@ -113,6 +114,7 @@ export const updateProfile = async (
   if (input.avatar_url !== undefined) {
     updates.avatar_url = input.avatar_url === "" ? null : input.avatar_url;
   }
+  if (input.preferred_locale !== undefined) updates.preferred_locale = input.preferred_locale ?? null;
 
   const { error } = await client.from("profiles").update(updates).eq("id", userId);
   if (error) {
