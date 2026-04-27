@@ -1,5 +1,5 @@
 {
-  "name": "atlas-bff",
+  "name": "nexploring-bff",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,7 +25,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "tsx scripts/apply-migrations.ts",
-    "db:link": "supabase link --project-ref jznanszhrqrwzrxlmhko",
+    "db:link": "supabase link --project-ref dtfattkokiohjardndba",
     "db:push": "supabase db push",
     "db:auth-rate-limits": "bash scripts/supabase-remote-auth-rate-limits.sh",
     "api:smoke": "tsx scripts/smoke-api.ts",
