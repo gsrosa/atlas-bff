@@ -1,6 +1,6 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
 import { config } from 'dotenv';
+import { readdirSync,readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import postgres from 'postgres';
 
 // Load .env.local (local dev) then fall back to .env

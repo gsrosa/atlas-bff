@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
+import type { z } from "zod";
 
-import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import type { Env } from "@/env/env";
+import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import * as creditsService from "@/services/credits.service";
 import type { ProfileDTO } from "@/shared/dtos/profile";
-import { patchProfileInputSchema } from "@/shared/validation-schema/user-profile";
-import type { z } from "zod";
+import { type patchProfileInputSchema } from "@/shared/validation-schema/user-profile";
 
 type PatchProfileInput = z.infer<typeof patchProfileInputSchema>;
 
@@ -23,15 +23,26 @@ async function ensureProfileAndCreditsRows(
     display_name: displayName,
   });
   if (pErr && pErr.code !== "23505") {
-    throw new TRPCError({ code: "BAD_REQUEST", message: pErr.message, cause: pErr });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: pErr.message,
+      cause: pErr,
+    });
   }
 
   const { data: creditRows, error: cErr } = await svc
     .from("user_credits")
-    .upsert({ user_id: userId, balance: 0 }, { onConflict: "user_id", ignoreDuplicates: true })
+    .upsert(
+      { user_id: userId, balance: 0 },
+      { onConflict: "user_id", ignoreDuplicates: true },
+    )
     .select("user_id");
   if (cErr) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: cErr.message, cause: cErr });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: cErr.message,
+      cause: cErr,
+    });
   }
   // Row was inserted (not a duplicate) — grant signup bonus
   if (creditRows && creditRows.length > 0) {
@@ -46,16 +57,26 @@ export const getProfile = async (
   email: string | undefined,
 ): Promise<{ profile: ProfileDTO | null }> => {
   const client = createUserScopedClient(env, accessToken);
-  let { data: profile, error: profileError } = await client.from("profiles").select("*").maybeSingle();
+  const result = await client.from("profiles").select("*").maybeSingle();
+  const { error: profileError } = result;
+  let { data: profile } = result;
   if (profileError) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: profileError.message, cause: profileError });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: profileError.message,
+      cause: profileError,
+    });
   }
 
   if (!profile) {
     await ensureProfileAndCreditsRows(env, userId, email);
     const retry = await client.from("profiles").select("*").maybeSingle();
     if (retry.error) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: retry.error.message, cause: retry.error });
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: retry.error.message,
+        cause: retry.error,
+      });
     }
     profile = retry.data;
   }
@@ -65,7 +86,11 @@ export const getProfile = async (
     .eq("user_id", userId)
     .maybeSingle();
   if (creditsError) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: creditsError.message, cause: creditsError });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: creditsError.message,
+      cause: creditsError,
+    });
   }
 
   if (!profile) {
@@ -104,21 +129,32 @@ export const updateProfile = async (
   const updates: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-  if (input.display_name !== undefined) updates.display_name = input.display_name;
+  if (input.display_name !== undefined)
+    updates.display_name = input.display_name;
   if (input.first_name !== undefined) updates.first_name = input.first_name;
   if (input.last_name !== undefined) updates.last_name = input.last_name;
   if (input.gender !== undefined) updates.gender = input.gender;
-  if (input.phone !== undefined) updates.phone = input.phone === "" ? null : input.phone;
-  if (input.bio !== undefined) updates.bio = input.bio === "" ? null : input.bio;
+  if (input.phone !== undefined)
+    updates.phone = input.phone === "" ? null : input.phone;
+  if (input.bio !== undefined)
+    updates.bio = input.bio === "" ? null : input.bio;
   if (input.country !== undefined) updates.country = input.country;
   if (input.avatar_url !== undefined) {
     updates.avatar_url = input.avatar_url === "" ? null : input.avatar_url;
   }
-  if (input.preferred_locale !== undefined) updates.preferred_locale = input.preferred_locale ?? null;
+  if (input.preferred_locale !== undefined)
+    updates.preferred_locale = input.preferred_locale ?? null;
 
-  const { error } = await client.from("profiles").update(updates).eq("id", userId);
+  const { error } = await client
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId);
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
 
   const out = await getProfile(env, accessToken, userId, email);

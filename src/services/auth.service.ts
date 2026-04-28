@@ -1,15 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { TRPCError } from "@trpc/server";
-
-import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
-import type { Env } from "@/env/env";
-import {
-  changePasswordInputSchema,
-  refreshInputSchema,
-  signInInputSchema,
-  signUpInputSchema,
-} from "@/shared/validation-schema/auth";
 import type { z } from "zod";
+
+import type { Env } from "@/env/env";
+import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
+import {
+  type changePasswordInputSchema,
+  type refreshInputSchema,
+  type signInInputSchema,
+  type signUpInputSchema,
+} from "@/shared/validation-schema/auth";
 
 type SignUpInput = z.infer<typeof signUpInputSchema>;
 type SignInInput = z.infer<typeof signInInputSchema>;

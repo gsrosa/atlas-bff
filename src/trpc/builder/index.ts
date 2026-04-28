@@ -1,0 +1,1 @@
+export type { AppRouter, RouterInputs, RouterOutputs } from "../routes/_app";

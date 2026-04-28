@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+pnpm generate:trpc
+
+# Check if there are changes in the api-types directory
+if [ -n "$(git status --porcelain -- src/trpc/builder/api-types)" ]; then
+  echo "🚀 tRPC API types have changed, committing updates..."
+  git add src/trpc/builder/api-types
+  git commit -m "chore: Update tRPC API exports" --no-verify
+else
+  echo "✅ No changes to tRPC API types"
+fi

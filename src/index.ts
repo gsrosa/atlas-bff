@@ -1,7 +1,7 @@
-import "./load-env.js";
-
 import { createApp } from "@/app";
 import { loadEnv } from "@/env/env";
+
+import "./load-env.js";
 
 export type { AppRouter, RouterInputs, RouterOutputs } from "@/trpc/routes/_app";
 

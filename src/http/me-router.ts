@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { Router, type Router as ExpressRouter } from "express";
+import { type Router as ExpressRouter,Router } from "express";
 
 import type { Env } from "@/env/env";
 import { requireBearerAuth } from "@/middleware/require-bearer-auth";

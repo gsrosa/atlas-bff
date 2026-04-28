@@ -17,9 +17,11 @@
   "types": "./dist/index.d.ts",
   "description": "Atlas backend-for-frontend — Express + tRPC with Supabase auth, users, and plans",
   "scripts": {
-    "prepare": "pnpm run build",
+    "prepare": "husky && pnpm run build",
     "dev": "tsx watch src/index.ts",
     "build": "tsup && tsc -p tsconfig.emit-dts.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -29,7 +31,9 @@
     "db:push": "supabase db push",
     "db:auth-rate-limits": "bash scripts/supabase-remote-auth-rate-limits.sh",
     "api:smoke": "tsx scripts/smoke-api.ts",
-    "api:integration": "tsx scripts/integration-routes.ts"
+    "api:integration": "tsx scripts/integration-routes.ts",
+    "generate:trpc": "tsup --config src/trpc/builder/tsup.config.ts",
+    "precommit:staged": "lint-staged"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.62",
@@ -48,6 +52,12 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "globals": "^17.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "@types/cookie": "^1.0.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -57,9 +67,16 @@
     "tsup": "^8.5.1",
     "tsx": "^4.19.3",
     "typescript": "~5.9.3",
+    "typescript-eslint": "^8.59.1",
     "vitest": "^4.1.2"
   },
   "engines": {
     "node": ">=20"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "vitest related --run"
+    ]
   }
 }

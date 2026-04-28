@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 
-import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import type { Env } from "@/env/env";
+import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import type { CreditTransactionDTO } from "@/shared/dtos/credit";
 
 export const getBalance = async (

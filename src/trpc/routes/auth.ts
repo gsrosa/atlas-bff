@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
 
 import * as authService from "@/services/auth.service";
+import { createSessionFromSupabase, deleteSession } from "@/sessions/session";
+import { clearSessionCookie, parseSessionIdFromCookie, setSessionCookie } from "@/sessions/session-cookie";
 import {
   changePasswordInputSchema,
   refreshInputSchema,
   signInInputSchema,
   signUpInputSchema,
 } from "@/shared/validation-schema/auth";
-import { createSessionFromSupabase, deleteSession } from "@/sessions/session";
-import { clearSessionCookie, parseSessionIdFromCookie, setSessionCookie } from "@/sessions/session-cookie";
 
 import { protectedProcedure, publicProcedure, router } from "../router.js";
 
@@ -19,7 +19,7 @@ export const authRouter = router({
       const id = await createSessionFromSupabase(ctx.env, result.session);
       setSessionCookie(ctx.res, ctx.env, id);
     }
-    const { session: _s, ...rest } = result;
+    const { ...rest } = result;
     return rest;
   }),
 
@@ -29,7 +29,7 @@ export const authRouter = router({
       const id = await createSessionFromSupabase(ctx.env, result.session);
       setSessionCookie(ctx.res, ctx.env, id);
     }
-    const { session: _s, ...rest } = result;
+    const { ...rest } = result;
     return rest;
   }),
 

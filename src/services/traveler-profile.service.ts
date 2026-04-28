@@ -1,11 +1,11 @@
 import { TRPCError } from "@trpc/server";
 
-import { createUserScopedClient } from "@/lib/supabase";
 import type { Env } from "@/env/env";
+import { createUserScopedClient } from "@/lib/supabase";
 import {
+  type PatchTravelerProfileInput,
   patchTravelerProfileInputSchema,
   TIER1_TRAVELER_KEYS,
-  type PatchTravelerProfileInput,
 } from "@/shared/validation-schema/traveler-profile";
 
 function isFieldFilled(key: string, value: unknown): boolean {

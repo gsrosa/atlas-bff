@@ -1,9 +1,7 @@
-import { Router, type Router as ExpressRouter } from "express";
+import { type Router as ExpressRouter,Router } from "express";
 import { z } from "zod";
 
 import type { Env } from "@/env/env";
-import { requireBearerAuth } from "@/middleware/require-bearer-auth";
-import * as creditsService from "@/services/credits.service";
 import {
   creditCostForDays,
   deriveDayCountFromAnswers,
@@ -11,6 +9,7 @@ import {
   modifyCostForDays,
   PLAN_MAX_DAYS,
 } from "@/lib/credit-utils";
+import { requireBearerAuth } from "@/middleware/require-bearer-auth";
 import {
   applyPlanModification,
   editTripPlan,
@@ -18,6 +17,7 @@ import {
   generateChecklistFromAnswers,
   generateTripPlanFromAnswers,
 } from "@/services/ai-generate.service";
+import * as creditsService from "@/services/credits.service";
 import { streamGeminiText } from "@/services/gemini-stream.service";
 import { streamAiInputSchema } from "@/shared/validation-schema/ai-stream";
 import {

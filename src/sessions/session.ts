@@ -1,15 +1,14 @@
-import { randomBytes } from "node:crypto";
-
 import type { Session, User } from "@supabase/supabase-js";
 import Redis from "ioredis";
+import { randomBytes } from "node:crypto";
 
-import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
 import type { Env } from "@/env/env";
+import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
 
 const SESSION_PREFIX = "atlas:sess:";
 const SESSION_TTL_SEC = 60 * 60 * 24 * 7; // 7 days, refreshed on each request
 
-let redisClients = new Map<string, Redis>();
+const redisClients = new Map<string, Redis>();
 
 export function getRedis(env: Env): Redis {
   const existing = redisClients.get(env.REDIS_URL);

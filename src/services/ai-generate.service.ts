@@ -6,17 +6,17 @@ import {
   deriveDayCountFromAnswers,
   deriveDayCountFromHotels,
 } from "@/lib/credit-utils";
-import {
-  checklistOutputSchema,
-  hotelEnrichOutputSchema,
-  tripPlanOutputSchema,
-  type ChecklistOutput,
-  type HotelEnrichOutput,
-  type TripPlanOutput,
-} from "@/shared/validation-schema/ai-output";
-import type { AnswerMap, AiQuestionInput, TripDetails } from "@/shared/validation-schema/planner-input";
-import { buildAIContextBlock } from "@/services/traveler-profile-ai-context";
 import { getTravelerPreferences } from "@/services/traveler-profile.service";
+import { buildAIContextBlock } from "@/services/traveler-profile-ai-context";
+import {
+  type ChecklistOutput,
+  checklistOutputSchema,
+  type HotelEnrichOutput,
+  hotelEnrichOutputSchema,
+  type TripPlanOutput,
+  tripPlanOutputSchema,
+} from "@/shared/validation-schema/ai-output";
+import type { AiQuestionInput, AnswerMap, TripDetails } from "@/shared/validation-schema/planner-input";
 
 // ─── AI client ────────────────────────────────────────────────────────────────
 

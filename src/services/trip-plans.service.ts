@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
+import type { z } from "zod";
 
-import { createUserScopedClient } from "@/lib/supabase";
 import type { Env } from "@/env/env";
+import { createUserScopedClient } from "@/lib/supabase";
 import * as creditsService from "@/services/credits.service";
 import type { TripPlanDTO } from "@/shared/dtos/trip-plan";
 import {
-  createTripPlanInputSchema,
-  patchTripPlanInputSchema,
+  type createTripPlanInputSchema,
+  type patchTripPlanInputSchema,
 } from "@/shared/validation-schema/trip-plans";
-import type { z } from "zod";
 
 type CreateTripPlanInput = z.infer<typeof createTripPlanInputSchema>;
 type PatchTripPlanInput = z.infer<typeof patchTripPlanInputSchema>;

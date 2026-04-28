@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+
 import type { Env } from "@/env/env";
 
 /** Validates JWTs and admin auth operations. Never expose this key to clients. */

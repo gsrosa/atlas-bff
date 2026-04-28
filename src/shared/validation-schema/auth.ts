@@ -4,7 +4,7 @@ import { genderSchema } from "@/shared/validation-schema/user-profile";
 
 const passwordSchema = z
   .string()
-  .min(12, "Password must be at least 12 characters")
+  .min(8, "Password must be at least 8 characters")
   .max(128, "Password is too long")
   .regex(/[a-z]/, "Include at least one lowercase letter")
   .regex(/[A-Z]/, "Include at least one uppercase letter")
