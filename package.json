@@ -3,19 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./trpc": {
-      "types": "./types-generated/trpc/export-types.d.ts",
-      "import": "./src/trpc/export-types.stub.js",
-      "default": "./src/trpc/export-types.stub.js"
-    }
-  },
-  "types": "./dist/index.d.ts",
-  "description": "Atlas backend-for-frontend — Express + tRPC with Supabase auth, users, and plans",
+  "description": "Nexploring backend-for-frontend — Express + tRPC with Supabase auth, users, and plans",
   "scripts": {
     "prepare": "husky && pnpm run build",
     "dev": "tsx watch src/index.ts",
