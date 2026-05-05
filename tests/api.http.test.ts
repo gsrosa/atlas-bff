@@ -35,3 +35,67 @@ describe("HTTP API (unauthenticated)", () => {
     await request(app).get(`/trpc/plans.list?input=${plansListInputEncoded}`).expect(401);
   });
 });
+
+describe("HTTP API CORS", () => {
+  it("reflects an exact allowed origin", async () => {
+    const app = createApp(
+      buildTestEnv({ CORS_ORIGINS: ["https://nexploring.vercel.app"] }),
+    );
+
+    const res = await request(app)
+      .options("/trpc/users.me")
+      .set("Origin", "https://nexploring.vercel.app")
+      .set("Access-Control-Request-Method", "GET")
+      .expect(204);
+
+    expect(res.headers["access-control-allow-origin"]).toBe(
+      "https://nexploring.vercel.app",
+    );
+    expect(res.headers["access-control-allow-credentials"]).toBe("true");
+  });
+
+  it("normalizes configured origins copied with a trailing slash", async () => {
+    const app = createApp(
+      buildTestEnv({ CORS_ORIGINS: ["https://nexploring-payment.vercel.app/"] }),
+    );
+
+    const res = await request(app)
+      .options("/trpc/users.me")
+      .set("Origin", "https://nexploring-payment.vercel.app")
+      .set("Access-Control-Request-Method", "GET")
+      .expect(204);
+
+    expect(res.headers["access-control-allow-origin"]).toBe(
+      "https://nexploring-payment.vercel.app",
+    );
+  });
+
+  it("supports explicit wildcard origins for Vercel preview deployments", async () => {
+    const app = createApp(
+      buildTestEnv({ CORS_ORIGINS: ["https://*.vercel.app"] }),
+    );
+
+    const res = await request(app)
+      .options("/trpc/users.me")
+      .set("Origin", "https://nexploring-payment-git-main-team.vercel.app")
+      .set("Access-Control-Request-Method", "GET")
+      .expect(204);
+
+    expect(res.headers["access-control-allow-origin"]).toBe(
+      "https://nexploring-payment-git-main-team.vercel.app",
+    );
+  });
+
+  it("does not emit CORS headers for a rejected origin", async () => {
+    const app = createApp(
+      buildTestEnv({ CORS_ORIGINS: ["https://nexploring.vercel.app"] }),
+    );
+
+    const res = await request(app)
+      .options("/trpc/users.me")
+      .set("Origin", "https://example.com")
+      .set("Access-Control-Request-Method", "GET");
+
+    expect(res.headers["access-control-allow-origin"]).toBeUndefined();
+  });
+});

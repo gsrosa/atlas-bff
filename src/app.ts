@@ -11,6 +11,49 @@ import { createContextFactory } from "@/trpc/context";
 import { trpcOnError } from "@/trpc/error-handler";
 import { appRouter } from "@/trpc/routes/_app";
 
+const normalizeOrigin = (origin: string): string => {
+  try {
+    return new URL(origin).origin.toLowerCase();
+  } catch {
+    return origin.trim().replace(/\/+$/, "").toLowerCase();
+  }
+};
+
+const escapeRegExp = (value: string): string => {
+  return value.replace(/[|\\{}()[\]^$+?.*]/g, "\\$&");
+};
+
+const isOriginAllowed = (allowedOrigins: string[], origin: string): boolean => {
+  return allowedOrigins.some((allowedOrigin) => {
+    if (allowedOrigin === "*") {
+      return true;
+    }
+
+    if (!allowedOrigin.includes("*")) {
+      return allowedOrigin === origin;
+    }
+
+    const pattern = `^${escapeRegExp(allowedOrigin).replace(/\\\*/g, ".*")}$`;
+    return new RegExp(pattern).test(origin);
+  });
+};
+
+const createCorsOriginValidator = (allowedOrigins: string[]) => {
+  const normalizedAllowedOrigins = allowedOrigins.map(normalizeOrigin);
+
+  return (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ): void => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    callback(null, isOriginAllowed(normalizedAllowedOrigins, normalizeOrigin(origin)));
+  };
+};
+
 export const createApp = (env: Env): Express => {
   const app = express();
 
@@ -24,7 +67,7 @@ export const createApp = (env: Env): Express => {
   );
   app.use(
     cors({
-      origin: env.CORS_ORIGINS,
+      origin: createCorsOriginValidator(env.CORS_ORIGINS),
       credentials: true,
     }),
   );

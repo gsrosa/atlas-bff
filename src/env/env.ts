@@ -12,7 +12,7 @@ const envSchema = z.object({
     .transform((s) =>
       s
         .split(",")
-        .map((o) => o.trim())
+        .map((o) => o.trim().replace(/\/+$/, ""))
         .filter(Boolean),
     ),
   /** Empty string in `.env` is treated as unset (POST /plans/stream will fail until set). */
