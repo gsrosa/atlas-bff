@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm run build",
-  "installCommand": "HUSKY=0 pnpm install --frozen-lockfile",
+  "installCommand": "HUSKY=0 pnpm install --no-frozen-lockfile",
   "version": 2,
   "builds": [
     {
