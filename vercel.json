@@ -1,17 +1,13 @@
 {
   "buildCommand": "pnpm run build",
   "installCommand": "HUSKY=0 pnpm install --no-frozen-lockfile",
-  "version": 2,
-  "builds": [
+  "functions": {
+    "dist/index.js": {}
+  },
+  "rewrites": [
     {
-      "src": "dist/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/dist/index.js"
+      "source": "/(.*)",
+      "destination": "/dist/index.js"
     }
   ]
 }
