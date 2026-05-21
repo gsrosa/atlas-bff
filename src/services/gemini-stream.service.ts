@@ -1,6 +1,6 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText } from "ai";
 
+import { buildAiModel, buildAiModelWithName } from "@/ai/client";
 import type { Env } from "@/env/env";
 import type { StreamAiInput } from "@/shared/validation-schema/ai-stream";
 
@@ -8,11 +8,12 @@ export async function streamGeminiText(
   env: Env,
   input: StreamAiInput,
 ): Promise<ReturnType<typeof streamText>> {
-  const google = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY! });
-  const model = input.model ?? env.GEMINI_MODEL;
+  const model = input.model
+    ? buildAiModelWithName(env, input.model)
+    : buildAiModel(env);
 
   return streamText({
-    model: google(model),
+    model,
     system: input.systemPrompt,
     prompt: input.userPrompt,
     maxOutputTokens: input.maxOutputTokens ?? 8192,

@@ -1,6 +1,6 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject } from "ai";
 
+import { buildAiModel, NO_THINKING } from "@/ai/client";
 import type { Env } from "@/env/env";
 import {
   deriveDayCountFromAnswers,
@@ -17,14 +17,6 @@ import {
   tripPlanOutputSchema,
 } from "@/shared/validation-schema/ai-output";
 import type { AiQuestionInput, AnswerMap, TripDetails } from "@/shared/validation-schema/planner-input";
-
-// ─── AI client ────────────────────────────────────────────────────────────────
-
-const buildGoogle = (env: Env) =>
-  createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY! });
-
-/** Disable thinking for generateObject calls to ensure clean JSON output. */
-const NO_THINKING = { google: { thinkingConfig: { thinkingBudget: 0 } } } as const;
 
 // ─── Prompt helpers ───────────────────────────────────────────────────────────
 
@@ -272,7 +264,7 @@ export const generateChecklistFromAnswers = async (
     `Do not re-ask the base fields.`;
 
   const { object } = await generateObject({
-    model: buildGoogle(env)(env.GEMINI_MODEL),
+    model: buildAiModel(env),
     providerOptions: NO_THINKING,
     schema: checklistOutputSchema,
     system: CHECKLIST_SYSTEM_PROMPT,
@@ -319,7 +311,7 @@ export const generateTripPlanFromAnswers = async (
     `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
 
   const { object } = await generateObject({
-    model: buildGoogle(env)(env.GEMINI_MODEL),
+    model: buildAiModel(env),
     providerOptions: NO_THINKING,
     schema: tripPlanOutputSchema,
     system: TRIP_PLAN_SYSTEM_PROMPT,
@@ -344,7 +336,7 @@ export const editTripPlan = async (
   opts: GenerateOptions,
 ): Promise<TripPlanOutput> => {
   const { object } = await generateObject({
-    model: buildGoogle(env)(env.GEMINI_MODEL),
+    model: buildAiModel(env),
     providerOptions: NO_THINKING,
     schema: tripPlanOutputSchema,
     system: opts.systemPrompt,
@@ -375,7 +367,7 @@ export const enrichHotelInfo = async (
     `\n\nReturn structured information about this hotel.`;
 
   const { object } = await generateObject({
-    model: buildGoogle(env)(env.GEMINI_MODEL),
+    model: buildAiModel(env),
     providerOptions: NO_THINKING,
     schema: hotelEnrichOutputSchema,
     system: HOTEL_ENRICH_SYSTEM_PROMPT,
@@ -406,7 +398,7 @@ export const applyPlanModification = async (
   request: string,
 ): Promise<TripPlanOutput> => {
   const { object } = await generateObject({
-    model: buildGoogle(env)(env.GEMINI_MODEL),
+    model: buildAiModel(env),
     providerOptions: NO_THINKING,
     schema: tripPlanOutputSchema,
     system: PLAN_MODIFY_SYSTEM_PROMPT,
