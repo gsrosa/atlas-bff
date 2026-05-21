@@ -196,8 +196,8 @@ function buildAnswerSummary(
     travelDates = `Exact dates: ${dateRange.startStr} → ${dateRange.endStr}`;
     if (isNearFuture(dateRange.start)) {
       weatherNote =
-        `- ⚠️ WEATHER FORECAST: Trip starts within 45 days — use real-world forecast data for ` +
-        `${dateRange.startStr} to ${dateRange.endStr} when planning outdoor activities. ` +
+        `- WEATHER FORECAST: Trip starts within 45 days — call getWeatherForecast for ` +
+        `${dateRange.startStr} to ${dateRange.endStr} and use the returned forecast when planning outdoor activities. ` +
         `Flag any days with historically poor weather for the destination.`;
     }
   } else {
@@ -430,7 +430,7 @@ export const streamTripPlanFromAnswers = async (
       description: "Complete day-by-day trip plan JSON.",
     }),
     tools,
-    stopWhen: tools ? stepCountIs(3) : undefined,
+    stopWhen: stepCountIs(5),
     system: TRIP_PLAN_SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 32768,
