@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import type { CreditTransactionDTO } from "@/shared/dtos/credit";
 
@@ -16,7 +16,11 @@ export const getBalance = async (
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
   return { balance: data?.balance ?? 0 };
 };
@@ -27,7 +31,12 @@ export const listTransactions = async (
   userId: string,
   limit: number,
   page: number,
-): Promise<{ transactions: CreditTransactionDTO[]; total: number; page: number; limit: number }> => {
+): Promise<{
+  transactions: CreditTransactionDTO[];
+  total: number;
+  page: number;
+  limit: number;
+}> => {
   const from = page * limit;
   const to = from + limit - 1;
   const client = createUserScopedClient(env, accessToken);
@@ -38,9 +47,18 @@ export const listTransactions = async (
     .order("created_at", { ascending: false })
     .range(from, to);
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
-  return { transactions: (data ?? []) as CreditTransactionDTO[], total: count ?? 0, page, limit };
+  return {
+    transactions: (data ?? []) as CreditTransactionDTO[],
+    total: count ?? 0,
+    page,
+    limit,
+  };
 };
 
 type ApplyParams = {
@@ -53,7 +71,10 @@ type ApplyParams = {
 };
 
 /** Service-role only: ledger + balance update. */
-export const applyCredit = async (env: Env, params: ApplyParams): Promise<{ balance: number }> => {
+export const applyCredit = async (
+  env: Env,
+  params: ApplyParams,
+): Promise<{ balance: number }> => {
   const admin = createServiceClient(env);
   const { data, error } = await admin.rpc("apply_credit", {
     p_user_id: params.userId,
@@ -81,7 +102,10 @@ export const addFundsForUser = async (
   metadata?: Record<string, unknown>,
 ): Promise<{ balance: number }> => {
   if (amount <= 0) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Amount must be positive" });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Amount must be positive",
+    });
   }
   return applyCredit(env, {
     userId,

@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 
 export function buildAiModel(env: Env) {
   const google = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY! });

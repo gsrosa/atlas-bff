@@ -1,7 +1,7 @@
 import { streamText } from "ai";
 
 import { buildAiModel, buildAiModelWithName } from "@/ai/client";
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import type { StreamAiInput } from "@/shared/validation-schema/ai-stream";
 
 export async function streamGeminiText(

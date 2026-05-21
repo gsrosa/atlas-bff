@@ -1,4 +1,4 @@
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 
 /** Deterministic env for unit / HTTP tests (no real Supabase or Redis required for unauthenticated routes). */
 export function buildTestEnv(overrides: Partial<Env> = {}): Env {

@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 
 export type Context = {
   env: Env;

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
 import { resolveSession } from "@/sessions/session";
 import { parseSessionIdFromCookie } from "@/sessions/session-cookie";
@@ -32,7 +32,9 @@ export const requireBearerAuth =
 
     const token = parseBearer(req.headers.authorization);
     if (!token) {
-      res.status(401).json({ error: "Missing session cookie or Authorization header" });
+      res
+        .status(401)
+        .json({ error: "Missing session cookie or Authorization header" });
       return;
     }
     const service = createServiceClient(env);

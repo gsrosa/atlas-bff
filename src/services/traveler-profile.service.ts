@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createUserScopedClient } from "@/lib/supabase";
 import {
   type PatchTravelerProfileInput,
@@ -20,7 +20,9 @@ function isFieldFilled(key: string, value: unknown): boolean {
   return true;
 }
 
-export function isTier1TravelerProfileComplete(data: Record<string, unknown>): boolean {
+export function isTier1TravelerProfileComplete(
+  data: Record<string, unknown>,
+): boolean {
   for (const k of TIER1_TRAVELER_KEYS) {
     if (k === "interests") {
       const arr = data.interests;
@@ -49,12 +51,22 @@ export async function getTravelerPreferences(
   tier1Complete: boolean;
 }> {
   const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client.from("profiles").select("traveler_preferences").eq("id", userId).maybeSingle();
+  const { data, error } = await client
+    .from("profiles")
+    .select("traveler_preferences")
+    .eq("id", userId)
+    .maybeSingle();
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
-  const raw = (data?.traveler_preferences as Record<string, unknown> | null) ?? {};
-  const preferences = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
+  const raw =
+    (data?.traveler_preferences as Record<string, unknown> | null) ?? {};
+  const preferences =
+    raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
   return {
     preferences,
     tier1Complete: isTier1TravelerProfileComplete(preferences),
@@ -86,11 +98,17 @@ export async function patchTravelerPreferences(
     .eq("id", userId)
     .maybeSingle();
   if (readErr) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: readErr.message, cause: readErr });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: readErr.message,
+      cause: readErr,
+    });
   }
 
   const prev =
-    row?.traveler_preferences && typeof row.traveler_preferences === "object" && !Array.isArray(row.traveler_preferences)
+    row?.traveler_preferences &&
+    typeof row.traveler_preferences === "object" &&
+    !Array.isArray(row.traveler_preferences)
       ? { ...(row.traveler_preferences as Record<string, unknown>) }
       : {};
 
@@ -105,7 +123,11 @@ export async function patchTravelerPreferences(
     })
     .eq("id", userId);
   if (writeErr) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: writeErr.message, cause: writeErr });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: writeErr.message,
+      cause: writeErr,
+    });
   }
 
   return {

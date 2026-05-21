@@ -1,9 +1,13 @@
 import { createApp } from "@/app";
-import { loadEnv } from "@/env/env";
+import { loadEnv } from "@/env/index.js";
 
 import "./load-env.js";
 
-export type { AppRouter, RouterInputs, RouterOutputs } from "@/trpc/routes/_app";
+export type {
+  AppRouter,
+  RouterInputs,
+  RouterOutputs,
+} from "@/trpc/routes/_app";
 
 const env = loadEnv();
 const app = createApp(env);

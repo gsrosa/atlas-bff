@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import type { z } from "zod";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createUserScopedClient } from "@/lib/supabase";
 import * as creditsService from "@/services/credits.service";
 import type { TripPlanDTO } from "@/shared/dtos/trip-plan";
@@ -31,7 +31,12 @@ export const listTripPlans = async (
   accessToken: string,
   limit: number,
   page: number,
-): Promise<{ plans: TripPlanDTO[]; total: number; page: number; limit: number }> => {
+): Promise<{
+  plans: TripPlanDTO[];
+  total: number;
+  page: number;
+  limit: number;
+}> => {
   const from = page * limit;
   const to = from + limit - 1;
   const client = createUserScopedClient(env, accessToken);
@@ -41,9 +46,18 @@ export const listTripPlans = async (
     .order("updated_at", { ascending: false })
     .range(from, to);
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
-  return { plans: (data ?? []) as TripPlanDTO[], total: count ?? 0, page, limit };
+  return {
+    plans: (data ?? []) as TripPlanDTO[],
+    total: count ?? 0,
+    page,
+    limit,
+  };
 };
 
 export const createTripPlan = async (
@@ -54,7 +68,11 @@ export const createTripPlan = async (
 ): Promise<{ plan: TripPlanDTO }> => {
   const cost = env.CREDITS_TRIP_PLAN_COST;
   if (cost > 0) {
-    const { balance } = await creditsService.getBalance(env, accessToken, userId);
+    const { balance } = await creditsService.getBalance(
+      env,
+      accessToken,
+      userId,
+    );
     if (balance < cost) {
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -69,9 +87,17 @@ export const createTripPlan = async (
     ...mapInputToRow(input),
   };
 
-  const { data, error } = await client.from("trip_plans").insert(row).select().single();
+  const { data, error } = await client
+    .from("trip_plans")
+    .insert(row)
+    .select()
+    .single();
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
 
   const plan = data as TripPlanDTO;
@@ -101,9 +127,17 @@ export const getTripPlanById = async (
   id: string,
 ): Promise<{ plan: TripPlanDTO }> => {
   const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client.from("trip_plans").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await client
+    .from("trip_plans")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
   if (!data) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Trip plan not found" });
@@ -122,17 +156,23 @@ export const updateTripPlan = async (
     updated_at: new Date().toISOString(),
   };
   if (input.title !== undefined) updates.title = input.title;
-  if (input.aiSuggestedTitle !== undefined) updates.ai_suggested_title = input.aiSuggestedTitle;
+  if (input.aiSuggestedTitle !== undefined)
+    updates.ai_suggested_title = input.aiSuggestedTitle;
   if (input.departureAt !== undefined) updates.departure_at = input.departureAt;
   if (input.arrivalAt !== undefined) updates.arrival_at = input.arrivalAt;
-  if (input.flightNumbers !== undefined) updates.flight_numbers = input.flightNumbers;
+  if (input.flightNumbers !== undefined)
+    updates.flight_numbers = input.flightNumbers;
   if (input.flights !== undefined) {
-    updates.flight_numbers = input.flights.map((f) => f.flightNumber).filter(Boolean);
+    updates.flight_numbers = input.flights
+      .map((f) => f.flightNumber)
+      .filter(Boolean);
   }
   if (input.daysCount !== undefined) updates.days_count = input.daysCount;
   if (input.destination !== undefined) updates.destination = input.destination;
-  if (input.destinationCountry !== undefined) updates.destination_country = input.destinationCountry;
-  if (input.formSnapshot !== undefined) updates.form_snapshot = input.formSnapshot;
+  if (input.destinationCountry !== undefined)
+    updates.destination_country = input.destinationCountry;
+  if (input.formSnapshot !== undefined)
+    updates.form_snapshot = input.formSnapshot;
   if (input.itinerary !== undefined) updates.itinerary = input.itinerary;
 
   const { data, error } = await client
@@ -142,7 +182,11 @@ export const updateTripPlan = async (
     .select()
     .single();
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
   if (!data) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Trip plan not found" });
@@ -150,11 +194,23 @@ export const updateTripPlan = async (
   return { plan: data as TripPlanDTO };
 };
 
-export const deleteTripPlan = async (env: Env, accessToken: string, id: string): Promise<void> => {
+export const deleteTripPlan = async (
+  env: Env,
+  accessToken: string,
+  id: string,
+): Promise<void> => {
   const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client.from("trip_plans").delete().eq("id", id).select("id");
+  const { data, error } = await client
+    .from("trip_plans")
+    .delete()
+    .eq("id", id)
+    .select("id");
   if (error) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+      cause: error,
+    });
   }
   if (!data?.length) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Trip plan not found" });

@@ -4,7 +4,7 @@ import express, { type Express } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createMeRouter } from "@/http/me-router";
 import { createPlanStreamRouter } from "@/http/plan-stream-router";
 import { createContextFactory } from "@/trpc/context";
@@ -50,7 +50,10 @@ const createCorsOriginValidator = (allowedOrigins: string[]) => {
       return;
     }
 
-    callback(null, isOriginAllowed(normalizedAllowedOrigins, normalizeOrigin(origin)));
+    callback(
+      null,
+      isOriginAllowed(normalizedAllowedOrigins, normalizeOrigin(origin)),
+    );
   };
 };
 

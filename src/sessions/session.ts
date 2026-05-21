@@ -2,7 +2,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import Redis from "ioredis";
 import { randomBytes } from "node:crypto";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
 
 const SESSION_PREFIX = "atlas:sess:";
@@ -27,18 +27,28 @@ export type StoredSessionPayload = {
   user_id: string;
 };
 
-export async function createSessionFromSupabase(env: Env, session: Session): Promise<string> {
+export async function createSessionFromSupabase(
+  env: Env,
+  session: Session,
+): Promise<string> {
   const id = randomBytes(32).toString("hex");
   const payload: StoredSessionPayload = {
     access_token: session.access_token,
     refresh_token: session.refresh_token,
     user_id: session.user.id,
   };
-  await getRedis(env).setex(`${SESSION_PREFIX}${id}`, SESSION_TTL_SEC, JSON.stringify(payload));
+  await getRedis(env).setex(
+    `${SESSION_PREFIX}${id}`,
+    SESSION_TTL_SEC,
+    JSON.stringify(payload),
+  );
   return id;
 }
 
-export async function deleteSession(env: Env, sessionId: string): Promise<void> {
+export async function deleteSession(
+  env: Env,
+  sessionId: string,
+): Promise<void> {
   await getRedis(env).del(`${SESSION_PREFIX}${sessionId}`);
 }
 
@@ -63,7 +73,10 @@ export async function resolveSession(
 
   const service = createServiceClient(env);
 
-  const tryRefresh = async (): Promise<{ accessToken: string; user: User } | null> => {
+  const tryRefresh = async (): Promise<{
+    accessToken: string;
+    user: User;
+  } | null> => {
     const { data, error } = await service.auth.refreshSession({
       refresh_token: payload.refresh_token,
     });
@@ -76,13 +89,20 @@ export async function resolveSession(
       refresh_token: data.session.refresh_token,
       user_id: data.user.id,
     };
-    await getRedis(env).setex(`${SESSION_PREFIX}${sessionId}`, SESSION_TTL_SEC, JSON.stringify(next));
+    await getRedis(env).setex(
+      `${SESSION_PREFIX}${sessionId}`,
+      SESSION_TTL_SEC,
+      JSON.stringify(next),
+    );
     return { accessToken: data.session.access_token, user: data.user };
   };
 
   const r = await getUserFromAccessToken(service, payload.access_token);
   if (r.user && !r.error) {
-    await getRedis(env).expire(`${SESSION_PREFIX}${sessionId}`, SESSION_TTL_SEC);
+    await getRedis(env).expire(
+      `${SESSION_PREFIX}${sessionId}`,
+      SESSION_TTL_SEC,
+    );
     return { accessToken: payload.access_token, user: r.user };
   }
 

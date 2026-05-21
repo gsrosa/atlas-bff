@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import type { z } from "zod";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import * as creditsService from "@/services/credits.service";
 import type { ProfileDTO } from "@/shared/dtos/profile";

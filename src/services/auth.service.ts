@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { TRPCError } from "@trpc/server";
 import type { z } from "zod";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
 import {
   type changePasswordInputSchema,
@@ -17,17 +17,24 @@ type RefreshInput = z.infer<typeof refreshInputSchema>;
 type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
 
 /** Supabase Auth uses `fetch`; "fetch failed" usually means the host in SUPABASE_URL is unreachable. */
-function isAuthTransportFailure(error: { message: string; cause?: unknown }): boolean {
+function isAuthTransportFailure(error: {
+  message: string;
+  cause?: unknown;
+}): boolean {
   if (error.message === "fetch failed") return true;
   const c = error.cause;
   if (c instanceof Error) {
     const code = (c as NodeJS.ErrnoException).code;
-    if (code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "ETIMEDOUT") return true;
+    if (code === "ECONNREFUSED" || code === "ENOTFOUND" || code === "ETIMEDOUT")
+      return true;
   }
   return false;
 }
 
-function describeAuthTransportFailure(error: { message: string; cause?: unknown }): string {
+function describeAuthTransportFailure(error: {
+  message: string;
+  cause?: unknown;
+}): string {
   const parts: string[] = [error.message];
   if (error.cause instanceof Error) {
     parts.push(error.cause.message);
@@ -38,7 +45,10 @@ function describeAuthTransportFailure(error: { message: string; cause?: unknown 
 }
 
 /** Supabase rejects duplicate sign-ups; we treat that as "already created" and complete with sign-in. */
-function isDuplicateSignUpError(error: { message?: string; code?: string }): boolean {
+function isDuplicateSignUpError(error: {
+  message?: string;
+  code?: string;
+}): boolean {
   const m = (error.message ?? "").toLowerCase();
   if (
     m.includes("already registered") ||

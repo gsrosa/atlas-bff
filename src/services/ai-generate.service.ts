@@ -13,7 +13,7 @@ import {
   TRIP_PLAN_PROMPT_VERSION,
   TRIP_PLAN_SYSTEM_PROMPT,
 } from "@/ai/prompts";
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import {
   deriveDayCountFromAnswers,
   deriveDayCountFromHotels,
@@ -28,7 +28,11 @@ import {
   type TripPlanOutput,
   tripPlanOutputSchema,
 } from "@/shared/validation-schema/ai-output";
-import type { AiQuestionInput, AnswerMap, TripDetails } from "@/shared/validation-schema/planner-input";
+import type {
+  AiQuestionInput,
+  AnswerMap,
+  TripDetails,
+} from "@/shared/validation-schema/planner-input";
 
 // ─── Logged generateObject wrapper ───────────────────────────────────────────
 
@@ -101,14 +105,17 @@ interface ParsedDateRange {
   endStr: string;
 }
 
-function parseDateRange(value: string | string[] | undefined): ParsedDateRange | null {
+function parseDateRange(
+  value: string | string[] | undefined,
+): ParsedDateRange | null {
   if (!value || typeof value !== "string") return null;
   const [startStr, endStr] = value.split("|");
   if (!startStr || !endStr) return null;
   const start = new Date(startStr);
   const end = new Date(endStr);
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
-  const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const days =
+    Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   return { start, end, days, startStr, endStr };
 }
 
@@ -119,7 +126,10 @@ function isNearFuture(date: Date, withinDays = 45): boolean {
   return diffDays >= 0 && diffDays <= withinDays;
 }
 
-function buildAnswerSummary(answers: AnswerMap, tripDetails?: TripDetails): string {
+function buildAnswerSummary(
+  answers: AnswerMap,
+  tripDetails?: TripDetails,
+): string {
   const dateRange = parseDateRange(answers["exact-date-range"]);
 
   let tripLength: string;
@@ -137,7 +147,8 @@ function buildAnswerSummary(answers: AnswerMap, tripDetails?: TripDetails): stri
     }
   } else {
     tripLength =
-      answers["trip-length"] === "custom-days" && typeof answers["exact-days"] === "string"
+      answers["trip-length"] === "custom-days" &&
+      typeof answers["exact-days"] === "string"
         ? `custom (${answers["exact-days"]} days)`
         : fmt(answers["trip-length"]);
     travelDates = fmt(answers["when-traveling"]);
@@ -173,7 +184,10 @@ function buildAnswerSummary(answers: AnswerMap, tripDetails?: TripDetails): stri
   return lines.join("\n");
 }
 
-function appendTripDetails(lines: string[], tripDetails: TripDetails | undefined): void {
+function appendTripDetails(
+  lines: string[],
+  tripDetails: TripDetails | undefined,
+): void {
   if (!tripDetails) return;
   if (tripDetails.hotels?.length) {
     const summary = tripDetails.hotels
@@ -202,7 +216,10 @@ function appendTripDetails(lines: string[], tripDetails: TripDetails | undefined
   }
 }
 
-function buildAiAnswerSummary(questions: AiQuestionInput[], answers: AnswerMap): string {
+function buildAiAnswerSummary(
+  questions: AiQuestionInput[],
+  answers: AnswerMap,
+): string {
   return questions
     .map((q) => `- ${q.question}: ${fmt(answers[q.id])}`)
     .join("\n");
@@ -222,7 +239,11 @@ export const generateChecklistFromAnswers = async (
   let mergedContext = buildAIContextBlock(null, baseSummary);
   if (opts?.accessToken && opts?.userId) {
     try {
-      const { preferences } = await getTravelerPreferences(env, opts.accessToken, opts.userId);
+      const { preferences } = await getTravelerPreferences(
+        env,
+        opts.accessToken,
+        opts.userId,
+      );
       mergedContext = buildAIContextBlock(preferences, baseSummary);
     } catch {
       mergedContext = buildAIContextBlock(null, baseSummary);
@@ -268,14 +289,20 @@ export const generateTripPlanFromAnswers = async (
   let mergedContext = tripCore;
   if (opts?.accessToken && opts?.userId) {
     try {
-      const { preferences } = await getTravelerPreferences(env, opts.accessToken, opts.userId);
+      const { preferences } = await getTravelerPreferences(
+        env,
+        opts.accessToken,
+        opts.userId,
+      );
       mergedContext = buildAIContextBlock(preferences, tripCore);
     } catch {
       mergedContext = tripCore;
     }
   }
 
-  const hotelDays = tripDetails?.hotels ? deriveDayCountFromHotels(tripDetails.hotels) : null;
+  const hotelDays = tripDetails?.hotels
+    ? deriveDayCountFromHotels(tripDetails.hotels)
+    : null;
   const effectiveDays = hotelDays ?? deriveDayCountFromAnswers(answers);
   const dayInstruction = effectiveDays
     ? `\nGenerate EXACTLY ${effectiveDays} days — the "days" array must have exactly ${effectiveDays} objects.`

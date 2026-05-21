@@ -1,7 +1,7 @@
-import { type Router as ExpressRouter,Router } from "express";
+import { type Router as ExpressRouter, Router } from "express";
 import { z } from "zod";
 
-import type { Env } from "@/env/env";
+import type { Env } from "@/env";
 import {
   creditCostForDays,
   deriveDayCountFromAnswers,
@@ -30,60 +30,124 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Generate AI follow-up questions from the traveller's base answers. */
   r.post("/checklist", requireBearerAuth(env), async (req, res) => {
-    if (!env.GEMINI_API_KEY) { res.status(503).json({ error: "AI provider is not configured on the server" }); return; }
+    if (!env.GEMINI_API_KEY) {
+      res
+        .status(503)
+        .json({ error: "AI provider is not configured on the server" });
+      return;
+    }
     const parsed = checklistInputSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
 
     // Validate day count cap
     const { answers, tripDetails } = parsed.data;
-    const hotelDays = tripDetails?.hotels ? deriveDayCountFromHotels(tripDetails.hotels) : null;
+    const hotelDays = tripDetails?.hotels
+      ? deriveDayCountFromHotels(tripDetails.hotels)
+      : null;
     const effectiveDays = hotelDays ?? deriveDayCountFromAnswers(answers);
     if (effectiveDays !== null && effectiveDays > PLAN_MAX_DAYS) {
-      res.status(400).json({ error: "TRIP_TOO_LONG", maxDays: PLAN_MAX_DAYS, requestedDays: effectiveDays });
+      res
+        .status(400)
+        .json({
+          error: "TRIP_TOO_LONG",
+          maxDays: PLAN_MAX_DAYS,
+          requestedDays: effectiveDays,
+        });
       return;
     }
 
     try {
-      const result = await generateChecklistFromAnswers(env, answers, {
-        accessToken: req.atlasAccessToken,
-        userId: req.atlasUser?.id,
-      }, tripDetails);
+      const result = await generateChecklistFromAnswers(
+        env,
+        answers,
+        {
+          accessToken: req.atlasAccessToken,
+          userId: req.atlasUser?.id,
+        },
+        tripDetails,
+      );
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : "Generation failed" });
+      res
+        .status(500)
+        .json({
+          error: err instanceof Error ? err.message : "Generation failed",
+        });
     }
   });
 
   /** Generate a full day-by-day trip plan from answers. */
   r.post("/trip", requireBearerAuth(env), async (req, res) => {
-    if (!env.GEMINI_API_KEY) { res.status(503).json({ error: "AI provider is not configured on the server" }); return; }
+    if (!env.GEMINI_API_KEY) {
+      res
+        .status(503)
+        .json({ error: "AI provider is not configured on the server" });
+      return;
+    }
     const parsed = tripPlanInputSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
 
     const { answers, aiQuestions, aiAnswers, tripDetails } = parsed.data;
     const userId = req.atlasUser?.id;
     const accessToken = req.atlasAccessToken;
 
     // Day count → credit tier
-    const hotelDays = tripDetails?.hotels ? deriveDayCountFromHotels(tripDetails.hotels) : null;
+    const hotelDays = tripDetails?.hotels
+      ? deriveDayCountFromHotels(tripDetails.hotels)
+      : null;
     const effectiveDays = hotelDays ?? deriveDayCountFromAnswers(answers);
     if (effectiveDays !== null && effectiveDays > PLAN_MAX_DAYS) {
-      res.status(400).json({ error: "TRIP_TOO_LONG", maxDays: PLAN_MAX_DAYS, requestedDays: effectiveDays });
+      res
+        .status(400)
+        .json({
+          error: "TRIP_TOO_LONG",
+          maxDays: PLAN_MAX_DAYS,
+          requestedDays: effectiveDays,
+        });
       return;
     }
     const PLAN_COST = creditCostForDays(effectiveDays ?? 7) ?? 5;
 
     if (userId && accessToken) {
-      const { balance } = await creditsService.getBalance(env, accessToken, userId);
+      const { balance } = await creditsService.getBalance(
+        env,
+        accessToken,
+        userId,
+      );
       if (balance < PLAN_COST) {
-        res.status(402).json({ error: "INSUFFICIENT_CREDITS", required: PLAN_COST, available: balance });
+        res
+          .status(402)
+          .json({
+            error: "INSUFFICIENT_CREDITS",
+            required: PLAN_COST,
+            available: balance,
+          });
         return;
       }
     }
 
     try {
       const result = await generateTripPlanFromAnswers(
-        env, answers, aiQuestions, aiAnswers,
+        env,
+        answers,
+        aiQuestions,
+        aiAnswers,
         { accessToken, userId },
         tripDetails,
       );
@@ -104,15 +168,32 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : "Generation failed" });
+      res
+        .status(500)
+        .json({
+          error: err instanceof Error ? err.message : "Generation failed",
+        });
     }
   });
 
   /** Apply a natural-language edit to an existing trip plan (raw prompts). */
   r.post("/edit", requireBearerAuth(env), async (req, res) => {
-    if (!env.GEMINI_API_KEY) { res.status(503).json({ error: "AI provider is not configured on the server" }); return; }
+    if (!env.GEMINI_API_KEY) {
+      res
+        .status(503)
+        .json({ error: "AI provider is not configured on the server" });
+      return;
+    }
     const parsed = streamAiInputSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
     try {
       const result = await editTripPlan(env, {
         systemPrompt: parsed.data.systemPrompt ?? "",
@@ -122,15 +203,32 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       });
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : "Generation failed" });
+      res
+        .status(500)
+        .json({
+          error: err instanceof Error ? err.message : "Generation failed",
+        });
     }
   });
 
   /** Stream raw text from Gemini (SSE). */
   r.post("/stream", requireBearerAuth(env), async (req, res) => {
-    if (!env.GEMINI_API_KEY) { res.status(503).json({ error: "AI provider is not configured on the server" }); return; }
+    if (!env.GEMINI_API_KEY) {
+      res
+        .status(503)
+        .json({ error: "AI provider is not configured on the server" });
+      return;
+    }
     const parsed = streamAiInputSchema.safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
     try {
       const result = await streamGeminiText(env, parsed.data);
       res.setHeader("Content-Type", "text/event-stream");
@@ -140,7 +238,9 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       let chunkIndex = 0;
       for await (const chunk of result.textStream) {
         console.log(`[stream] chunk #${chunkIndex++}:`, JSON.stringify(chunk));
-        res.write(`data: ${JSON.stringify({ type: "text", delta: chunk })}\n\n`);
+        res.write(
+          `data: ${JSON.stringify({ type: "text", delta: chunk })}\n\n`,
+        );
       }
       console.log(`[stream] done — ${chunkIndex} chunks`);
       res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
@@ -159,14 +259,29 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Enrich hotel info using AI. */
   r.post("/hotel-enrich", requireBearerAuth(env), async (req, res) => {
-    if (!env.GEMINI_API_KEY) { res.status(503).json({ error: "AI provider is not configured on the server" }); return; }
-    const parsed = z.object({
-      name: z.string().min(1).max(500),
-      destination: z.string().max(500).default(""),
-      checkinDate: z.string().optional(),
-      checkoutDate: z.string().optional(),
-    }).safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+    if (!env.GEMINI_API_KEY) {
+      res
+        .status(503)
+        .json({ error: "AI provider is not configured on the server" });
+      return;
+    }
+    const parsed = z
+      .object({
+        name: z.string().min(1).max(500),
+        destination: z.string().max(500).default(""),
+        checkinDate: z.string().optional(),
+        checkoutDate: z.string().optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
     try {
       const result = await enrichHotelInfo(
         env,
@@ -177,18 +292,37 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       );
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : "Enrichment failed" });
+      res
+        .status(500)
+        .json({
+          error: err instanceof Error ? err.message : "Enrichment failed",
+        });
     }
   });
 
   /** Apply a natural-language modification to an existing trip plan. */
   r.post("/modify", requireBearerAuth(env), async (req, res) => {
-    if (!env.GEMINI_API_KEY) { res.status(503).json({ error: "AI provider is not configured on the server" }); return; }
-    const parsed = z.object({
-      itinerary: z.record(z.unknown()),
-      request: z.string().min(1).max(10_000),
-    }).safeParse(req.body);
-    if (!parsed.success) { res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() }); return; }
+    if (!env.GEMINI_API_KEY) {
+      res
+        .status(503)
+        .json({ error: "AI provider is not configured on the server" });
+      return;
+    }
+    const parsed = z
+      .object({
+        itinerary: z.record(z.unknown()),
+        request: z.string().min(1).max(10_000),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({
+          error: "Invalid request body",
+          details: parsed.error.flatten(),
+        });
+      return;
+    }
 
     const itineraryDays = Array.isArray(parsed.data.itinerary.days)
       ? (parsed.data.itinerary.days as unknown[]).length
@@ -198,15 +332,29 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
     const accessToken = req.atlasAccessToken;
 
     if (userId && accessToken) {
-      const { balance } = await creditsService.getBalance(env, accessToken, userId);
+      const { balance } = await creditsService.getBalance(
+        env,
+        accessToken,
+        userId,
+      );
       if (balance < MODIFY_COST) {
-        res.status(402).json({ error: "INSUFFICIENT_CREDITS", required: MODIFY_COST, available: balance });
+        res
+          .status(402)
+          .json({
+            error: "INSUFFICIENT_CREDITS",
+            required: MODIFY_COST,
+            available: balance,
+          });
         return;
       }
     }
 
     try {
-      const result = await applyPlanModification(env, parsed.data.itinerary, parsed.data.request);
+      const result = await applyPlanModification(
+        env,
+        parsed.data.itinerary,
+        parsed.data.request,
+      );
       if (userId && accessToken) {
         await creditsService.applyCredit(env, {
           userId,
@@ -217,7 +365,11 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       }
       res.json(result);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : "Modification failed" });
+      res
+        .status(500)
+        .json({
+          error: err instanceof Error ? err.message : "Modification failed",
+        });
     }
   });
 
