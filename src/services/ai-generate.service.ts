@@ -1,4 +1,4 @@
-import { generateObject, streamObject } from "ai";
+import { generateObject, Output, stepCountIs, streamText } from "ai";
 import type { ZodSchema } from "zod";
 
 import { buildAiModel, NO_THINKING } from "@/ai/client";
@@ -17,6 +17,7 @@ import {
   TRIP_PLAN_PROMPT_VERSION,
   TRIP_PLAN_SYSTEM_PROMPT,
 } from "@/ai/prompts";
+import { buildTripGenerationTools } from "@/ai/tools";
 import type { Env } from "@/env";
 import {
   deriveDayCountFromAnswers,
@@ -419,35 +420,22 @@ export const streamTripPlanFromAnswers = async (
   const start = Date.now();
   const correlationId = crypto.randomUUID();
 
-  const result = streamObject({
+  const tools = buildTripGenerationTools(env);
+  const result = streamText({
     model: buildAiModel(env),
     providerOptions: NO_THINKING,
-    schema: tripPlanOutputSchema,
+    output: Output.object({
+      schema: tripPlanOutputSchema,
+      name: "TripPlan",
+      description: "Complete day-by-day trip plan JSON.",
+    }),
+    tools,
+    stopWhen: tools ? stepCountIs(3) : undefined,
     system: TRIP_PLAN_SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 32768,
     temperature: 0.7,
-    onFinish: ({ object, usage, error }) => {
-      let qualityError: AiQualityError | null = null;
-      if (object === undefined) {
-        qualityError = new AiQualityError([
-          "stream finished without a valid object",
-        ]);
-      } else {
-        try {
-          assertTripPlanQuality(object, { expectedDays: effectiveDays });
-        } catch (err) {
-          if (err instanceof AiQualityError) {
-            qualityError = err;
-          }
-        }
-      }
-      const errorCode = error
-        ? error instanceof Error
-          ? error.message.slice(0, 120)
-          : "stream validation failed"
-        : qualityError?.message.slice(0, 120);
-
+    onFinish: ({ usage }) => {
       logAiCall({
         correlationId,
         endpoint: "trip",
@@ -457,14 +445,19 @@ export const streamTripPlanFromAnswers = async (
         inputTokens: usage.inputTokens ?? 0,
         outputTokens: usage.outputTokens ?? 0,
         latencyMs: Date.now() - start,
-        success: !error && !qualityError,
-        zodValid: !error && object !== undefined,
-        errorCode,
+        success: true,
+        zodValid: true,
       });
     },
   });
 
-  return { result, expectedDays: effectiveDays };
+  return {
+    result: {
+      partialObjectStream: result.partialOutputStream,
+      object: result.output,
+    },
+    expectedDays: effectiveDays,
+  };
 };
 
 // ─── Edit (server-side prompt only) ──────────────────────────────────────────

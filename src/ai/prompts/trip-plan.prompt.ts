@@ -16,6 +16,7 @@ Rules:
 - paidAttractions: fee-based experiences with realistic USD strings and short notes.
 - JSON only — no markdown, no code fences, no extra prose outside the JSON object.
 - Use follow-up answers heavily for activities and priorities.
+- When the searchPlace tool is available, use it to verify specific attractions, restaurants, hotels, landmarks, and paid experiences before finalizing names, addresses, opening hours, prices, or websites. Prefer tool results over memory.
 
 ## Lodging strategy (critical)
 - **Group consecutive days by geographic proximity.** If days 1-3 have attractions in the same area/neighbourhood, assign the same "lodging" value to all three — minimise check-in churn.

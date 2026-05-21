@@ -21,6 +21,11 @@ const envSchema = z.object({
     z.string().min(1).optional(),
   ),
   GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  /** Optional Google Places API key for real place lookup during trip generation. */
+  GOOGLE_PLACES_API_KEY: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v),
+    z.string().min(1).optional(),
+  ),
   CREDITS_TRIP_PLAN_COST: z.coerce.number().int().min(0).default(0),
   CREDITS_ALLOW_SELF_TOPUP: z.preprocess(
     (val) => val === true || val === "true" || val === "1",
