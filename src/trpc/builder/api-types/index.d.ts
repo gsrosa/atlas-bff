@@ -318,6 +318,15 @@ type TripPlanDTO = {
     createdAt: string;
     updatedAt: string;
 };
+type TripPlanResponseDTO = {
+    plan: TripPlanDTO;
+};
+type TripPlansResponseDTO = {
+    plans: TripPlanDTO[];
+    total: number;
+    page: number;
+    limit: number;
+};
 
 type CreditTransactionDTO = {
     id: string;
@@ -329,6 +338,12 @@ type CreditTransactionDTO = {
     referenceId: string | null;
     metadata: Record<string, unknown>;
     createdAt: string;
+};
+type CreditTransactionsResponseDTO = {
+    transactions: CreditTransactionDTO[];
+    total: number;
+    page: number;
+    limit: number;
 };
 
 type ProfileDTO = {
@@ -346,6 +361,9 @@ type ProfileDTO = {
     creditsBalance: number;
     createdAt: string;
     updatedAt: string;
+};
+type ProfileResponseDTO = {
+    profile: ProfileDTO | null;
 };
 
 declare const envSchema: z.ZodObject<{
@@ -528,9 +546,7 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
     }, _trpc_server.TRPCDecorateCreateRouterOptions<{
         me: _trpc_server.TRPCQueryProcedure<{
             input: void;
-            output: {
-                profile: ProfileDTO | null;
-            };
+            output: ProfileResponseDTO;
             meta: object;
         }>;
         updateMe: _trpc_server.TRPCMutationProcedure<{
@@ -576,15 +592,10 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
         }>;
         list: _trpc_server.TRPCQueryProcedure<{
             input: {
-                page?: number | undefined;
                 limit?: number | undefined;
+                page?: number | undefined;
             };
-            output: {
-                transactions: CreditTransactionDTO[];
-                total: number;
-                page: number;
-                limit: number;
-            };
+            output: CreditTransactionsResponseDTO;
             meta: object;
         }>;
         addFunds: _trpc_server.TRPCMutationProcedure<{
@@ -616,15 +627,10 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
     }, _trpc_server.TRPCDecorateCreateRouterOptions<{
         list: _trpc_server.TRPCQueryProcedure<{
             input: {
-                page?: number | undefined;
                 limit?: number | undefined;
+                page?: number | undefined;
             };
-            output: {
-                plans: TripPlanDTO[];
-                total: number;
-                page: number;
-                limit: number;
-            };
+            output: TripPlansResponseDTO;
             meta: object;
         }>;
         create: _trpc_server.TRPCMutationProcedure<{
@@ -645,18 +651,14 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                 formSnapshot?: Record<string, unknown> | undefined;
                 itinerary?: Record<string, unknown> | undefined;
             };
-            output: {
-                plan: TripPlanDTO;
-            };
+            output: TripPlanResponseDTO;
             meta: object;
         }>;
         getById: _trpc_server.TRPCQueryProcedure<{
             input: {
                 id: string;
             };
-            output: {
-                plan: TripPlanDTO;
-            };
+            output: TripPlanResponseDTO;
             meta: object;
         }>;
         update: _trpc_server.TRPCMutationProcedure<{
@@ -678,9 +680,7 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                 formSnapshot?: Record<string, unknown> | undefined;
                 itinerary?: Record<string, unknown> | undefined;
             };
-            output: {
-                plan: TripPlanDTO;
-            };
+            output: TripPlanResponseDTO;
             meta: object;
         }>;
         delete: _trpc_server.TRPCMutationProcedure<{
