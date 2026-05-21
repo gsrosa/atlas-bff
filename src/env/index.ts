@@ -21,6 +21,12 @@ const envSchema = z.object({
     z.string().min(1).optional(),
   ),
   GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  /** Optional fallback chat model when Gemini is not configured. */
+  OPENAI_API_KEY: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v),
+    z.string().min(1).optional(),
+  ),
+  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
   /** Optional Google Places API key for real place lookup during trip generation. */
   GOOGLE_PLACES_API_KEY: z.preprocess(
     (v) => (v === "" || v === undefined ? undefined : v),

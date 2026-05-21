@@ -1,6 +1,7 @@
 import { type Router as ExpressRouter, Router } from "express";
 import { z } from "zod";
 
+import { hasAiProvider } from "@/ai/client";
 import {
   sanitizeUserRequest,
   UserRequestValidationError,
@@ -37,7 +38,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Generate AI follow-up questions from the traveller's base answers. */
   r.post("/checklist", async (req, res) => {
-    if (!env.GEMINI_API_KEY) {
+    if (!hasAiProvider(env)) {
       res
         .status(503)
         .json({ error: "AI provider is not configured on the server" });
@@ -93,7 +94,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Generate a full day-by-day trip plan from answers. */
   r.post("/trip", async (req, res) => {
-    if (!env.GEMINI_API_KEY) {
+    if (!hasAiProvider(env)) {
       res
         .status(503)
         .json({ error: "AI provider is not configured on the server" });
@@ -203,7 +204,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Apply a natural-language edit to an existing trip plan. */
   r.post("/edit", async (req, res) => {
-    if (!env.GEMINI_API_KEY) {
+    if (!hasAiProvider(env)) {
       res
         .status(503)
         .json({ error: "AI provider is not configured on the server" });
@@ -250,7 +251,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Stream raw text from Gemini (SSE). */
   r.post("/stream", async (req, res) => {
-    if (!env.GEMINI_API_KEY) {
+    if (!hasAiProvider(env)) {
       res
         .status(503)
         .json({ error: "AI provider is not configured on the server" });
@@ -296,7 +297,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Enrich hotel info using AI. */
   r.post("/hotel-enrich", async (req, res) => {
-    if (!env.GEMINI_API_KEY) {
+    if (!hasAiProvider(env)) {
       res
         .status(503)
         .json({ error: "AI provider is not configured on the server" });
@@ -339,7 +340,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
 
   /** Apply a natural-language modification to an existing trip plan. */
   r.post("/modify", async (req, res) => {
-    if (!env.GEMINI_API_KEY) {
+    if (!hasAiProvider(env)) {
       res
         .status(503)
         .json({ error: "AI provider is not configured on the server" });

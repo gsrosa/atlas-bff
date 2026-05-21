@@ -10,6 +10,7 @@ export function buildTestEnv(overrides: Partial<Env> = {}): Env {
     SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
     CORS_ORIGINS: ["http://localhost:5173"],
     GEMINI_MODEL: "gemini-2.5-flash",
+    OPENAI_MODEL: "gpt-4o-mini",
     CREDITS_TRIP_PLAN_COST: 0,
     CREDITS_ALLOW_SELF_TOPUP: false,
     REDIS_URL: "redis://127.0.0.1:6379",
