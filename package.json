@@ -18,6 +18,7 @@
     "db:link": "supabase link --project-ref dtfattkokiohjardndba",
     "db:push": "supabase db push",
     "db:auth-rate-limits": "bash scripts/supabase-remote-auth-rate-limits.sh",
+    "rag:seed": "tsx scripts/seed-destination-knowledge.ts",
     "api:smoke": "tsx scripts/smoke-api.ts",
     "api:integration": "tsx scripts/integration-routes.ts",
     "generate:trpc": "tsup --config src/trpc/builder/tsup.config.ts",

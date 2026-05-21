@@ -1,0 +1,32 @@
+[
+  {
+    "destination": "Tokyo",
+    "country": "Japan",
+    "title": "Neighborhood pacing for first-time Tokyo trips",
+    "content": "Group Shinjuku, Shibuya, Harajuku, and nearby west-side neighborhoods together to avoid cross-city backtracking. Put Asakusa, Ueno, Akihabara, and Tokyo Station area on separate east-side days when possible.",
+    "sourceUrl": "https://www.gotokyo.org/en/",
+    "metadata": {
+      "category": "routing"
+    }
+  },
+  {
+    "destination": "Paris",
+    "country": "France",
+    "title": "Museum and landmark clustering in central Paris",
+    "content": "Cluster Louvre, Tuileries, Palais Royal, and the Seine quays into the same central day. Keep Eiffel Tower and Trocadero with west-side activities to reduce metro transfers.",
+    "sourceUrl": "https://parisjetaime.com/eng/",
+    "metadata": {
+      "category": "routing"
+    }
+  },
+  {
+    "destination": "Sao Paulo",
+    "country": "Brazil",
+    "title": "Traffic-aware planning for Sao Paulo",
+    "content": "Plan Sao Paulo days by area because cross-city traffic can be heavy. Pair Avenida Paulista, Jardins, and MASP together, and keep Ibirapuera-focused activities in a separate south-central block.",
+    "sourceUrl": "https://cidadedesaopaulo.com/",
+    "metadata": {
+      "category": "routing"
+    }
+  }
+]
