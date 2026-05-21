@@ -1,6 +1,10 @@
 import { type Router as ExpressRouter, Router } from "express";
 import { z } from "zod";
 
+import {
+  sanitizeUserRequest,
+  UserRequestValidationError,
+} from "@/ai/guards/input-sanitizer";
 import type { Env } from "@/env";
 import {
   creditCostForDays,
@@ -197,9 +201,22 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
         });
       return;
     }
+    let userPrompt: string;
+    try {
+      userPrompt = sanitizeUserRequest(parsed.data.userPrompt, {
+        maxLength: 100_000,
+      });
+    } catch (err) {
+      if (err instanceof UserRequestValidationError) {
+        res.status(400).json({ error: err.code, message: err.message });
+        return;
+      }
+      throw err;
+    }
+
     try {
       const result = await editTripPlan(env, {
-        userPrompt: parsed.data.userPrompt,
+        userPrompt,
         maxTokens: parsed.data.maxOutputTokens,
         temperature: parsed.data.temperature,
       });
@@ -326,6 +343,17 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       return;
     }
 
+    let sanitizedRequest: string;
+    try {
+      sanitizedRequest = sanitizeUserRequest(parsed.data.request);
+    } catch (err) {
+      if (err instanceof UserRequestValidationError) {
+        res.status(400).json({ error: err.code, message: err.message });
+        return;
+      }
+      throw err;
+    }
+
     const itineraryDays = Array.isArray(parsed.data.itinerary.days)
       ? (parsed.data.itinerary.days as unknown[]).length
       : 7;
@@ -355,7 +383,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
       const result = await applyPlanModification(
         env,
         parsed.data.itinerary,
-        parsed.data.request,
+        sanitizedRequest,
       );
       if (userId && accessToken) {
         await creditsService.applyCredit(env, {
