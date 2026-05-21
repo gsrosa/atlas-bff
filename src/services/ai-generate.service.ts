@@ -2,6 +2,10 @@ import { generateObject } from "ai";
 import type { ZodSchema } from "zod";
 
 import { buildAiModel, NO_THINKING } from "@/ai/client";
+import {
+  AiQualityError,
+  assertTripPlanQuality,
+} from "@/ai/guards/quality-assertions";
 import { logAiCall } from "@/ai/logger";
 import {
   CHECKLIST_PROMPT_VERSION,
@@ -87,6 +91,56 @@ async function generate<T>(opts: {
     });
     throw err;
   }
+}
+
+async function generateTripPlanWithQuality(opts: {
+  env: Env;
+  endpoint: string;
+  promptVersion: string;
+  userId?: string;
+  system: string;
+  prompt: string;
+  maxOutputTokens: number;
+  temperature: number;
+  expectedDays?: number | null;
+}): Promise<TripPlanOutput> {
+  let prompt = opts.prompt;
+  let lastQualityError: AiQualityError | null = null;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const result = await generate({
+      env: opts.env,
+      endpoint: opts.endpoint,
+      promptVersion: opts.promptVersion,
+      userId: opts.userId,
+      schema: tripPlanOutputSchema,
+      system: opts.system,
+      prompt,
+      maxOutputTokens: opts.maxOutputTokens,
+      temperature: opts.temperature,
+    });
+
+    try {
+      assertTripPlanQuality(result, { expectedDays: opts.expectedDays });
+      return result;
+    } catch (err) {
+      if (!(err instanceof AiQualityError) || attempt === 2) throw err;
+
+      lastQualityError = err;
+      prompt =
+        `${opts.prompt}\n\n` +
+        `QUALITY CORRECTION REQUIRED:\n` +
+        `The previous JSON failed these checks: ${err.issues.join("; ")}.\n` +
+        `Regenerate the complete trip plan JSON. Every day must include ` +
+        `a non-empty city and a specific lodging value with accommodation ` +
+        `type plus neighbourhood or area.` +
+        (opts.expectedDays
+          ? ` The days array must contain exactly ${opts.expectedDays} objects.`
+          : "");
+    }
+  }
+
+  throw lastQualityError ?? new AiQualityError(["unknown quality failure"]);
 }
 
 // ─── Prompt helpers ───────────────────────────────────────────────────────────
@@ -313,16 +367,16 @@ export const generateTripPlanFromAnswers = async (
     `${mergedContext}\n\n` +
     `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
 
-  return generate({
+  return generateTripPlanWithQuality({
     env,
     endpoint: "trip",
     promptVersion: TRIP_PLAN_PROMPT_VERSION,
     userId: opts?.userId,
-    schema: tripPlanOutputSchema,
     system: TRIP_PLAN_SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 32768,
     temperature: 0.7,
+    expectedDays: effectiveDays,
   });
 };
 
@@ -332,11 +386,10 @@ export const editTripPlan = async (
   env: Env,
   opts: { userPrompt: string; maxTokens?: number; temperature?: number },
 ): Promise<TripPlanOutput> => {
-  return generate({
+  return generateTripPlanWithQuality({
     env,
     endpoint: "edit",
     promptVersion: TRIP_PLAN_PROMPT_VERSION,
-    schema: tripPlanOutputSchema,
     system: TRIP_PLAN_SYSTEM_PROMPT,
     prompt: opts.userPrompt,
     maxOutputTokens: opts.maxTokens ?? 32768,
@@ -378,11 +431,10 @@ export const applyPlanModification = async (
   itinerary: Record<string, unknown>,
   request: string,
 ): Promise<TripPlanOutput> => {
-  return generate({
+  return generateTripPlanWithQuality({
     env,
     endpoint: "modify",
     promptVersion: PLAN_MODIFY_PROMPT_VERSION,
-    schema: tripPlanOutputSchema,
     system: PLAN_MODIFY_SYSTEM_PROMPT,
     prompt:
       `Current trip plan:\n${JSON.stringify(itinerary, null, 2)}\n\n` +
