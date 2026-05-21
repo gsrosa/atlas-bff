@@ -7,6 +7,7 @@ import helmet from "helmet";
 import type { Env } from "@/env";
 import { createMeRouter } from "@/http/me-router";
 import { createPlanStreamRouter } from "@/http/plan-stream-router";
+import { requireBearerAuth } from "@/middleware/require-bearer-auth";
 import { createContextFactory } from "@/trpc/context";
 import { trpcOnError } from "@/trpc/error-handler";
 import { appRouter } from "@/trpc/routes/_app";
@@ -84,12 +85,13 @@ export const createApp = (env: Env): Express => {
     message: { error: "Too many requests, slow down." },
   });
 
-  const planStreamLimiter = rateLimit({
+  const plansAiLimiter = rateLimit({
     windowMs: 60 * 1000,
-    limit: 20,
+    limit: 10,
+    keyGenerator: (req) => req.atlasUser?.id ?? req.ip ?? "unknown",
     standardHeaders: "draft-7",
     legacyHeaders: false,
-    message: { error: "Too many plan stream requests, slow down." },
+    message: { error: "AI_RATE_LIMIT" },
   });
 
   app.get("/health", (_req, res) => {
@@ -98,7 +100,12 @@ export const createApp = (env: Env): Express => {
 
   app.use(createMeRouter(env));
 
-  app.use("/plans", planStreamLimiter, createPlanStreamRouter(env));
+  app.use(
+    "/plans",
+    requireBearerAuth(env),
+    plansAiLimiter,
+    createPlanStreamRouter(env),
+  );
 
   app.use(
     "/trpc",
