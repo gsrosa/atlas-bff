@@ -17,6 +17,10 @@ import {
   TRIP_PLAN_PROMPT_VERSION,
   TRIP_PLAN_SYSTEM_PROMPT,
 } from "@/ai/prompts";
+import {
+  formatDestinationContextBlock,
+  retrieveDestinationContext,
+} from "@/ai/rag";
 import { buildTripGenerationTools } from "@/ai/tools";
 import type { Env } from "@/env";
 import {
@@ -291,7 +295,11 @@ async function buildTripPlanPrompt(
   aiAnswers: AnswerMap,
   opts?: { accessToken?: string; userId?: string },
   tripDetails?: TripDetails,
-): Promise<{ userPrompt: string; effectiveDays: number | null }> {
+): Promise<{
+  systemPrompt: string;
+  userPrompt: string;
+  effectiveDays: number | null;
+}> {
   const aiSummary = buildAiAnswerSummary(aiQuestions, aiAnswers);
   const baseSummary = buildAnswerSummary(answers, tripDetails);
   const tripCore =
@@ -325,7 +333,43 @@ async function buildTripPlanPrompt(
     `${mergedContext}\n\n` +
     `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
 
-  return { userPrompt, effectiveDays };
+  const systemPrompt = await buildTripPlanSystemPrompt(
+    env,
+    answers,
+    `${baseSummary}\n\n${aiSummary}`,
+  );
+
+  return { systemPrompt, userPrompt, effectiveDays };
+}
+
+async function buildTripPlanSystemPrompt(
+  env: Env,
+  answers: AnswerMap,
+  retrievalQuery: string,
+): Promise<string> {
+  try {
+    const chunks = await retrieveDestinationContext(env, retrievalQuery, {
+      destination: firstAnswer(answers["destination-in-mind"]),
+      country: firstAnswer(answers["country-name"]),
+      limit: 5,
+      threshold: 0.72,
+    });
+    const contextBlock = formatDestinationContextBlock(chunks);
+    if (!contextBlock) return TRIP_PLAN_SYSTEM_PROMPT;
+
+    return (
+      `${TRIP_PLAN_SYSTEM_PROMPT}\n\n` +
+      `${contextBlock}\n\n` +
+      `Use DESTINATION KNOWLEDGE as grounding context. If it conflicts with tool results or explicit traveller constraints, prefer tool results and traveller constraints.`
+    );
+  } catch {
+    return TRIP_PLAN_SYSTEM_PROMPT;
+  }
+}
+
+function firstAnswer(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
 }
 
 export const generateChecklistFromAnswers = async (
@@ -379,7 +423,7 @@ export const generateTripPlanFromAnswers = async (
   opts?: { accessToken?: string; userId?: string },
   tripDetails?: TripDetails,
 ): Promise<TripPlanOutput> => {
-  const { userPrompt, effectiveDays } = await buildTripPlanPrompt(
+  const { systemPrompt, userPrompt, effectiveDays } = await buildTripPlanPrompt(
     env,
     answers,
     aiQuestions,
@@ -393,7 +437,7 @@ export const generateTripPlanFromAnswers = async (
     endpoint: "trip",
     promptVersion: TRIP_PLAN_PROMPT_VERSION,
     userId: opts?.userId,
-    system: TRIP_PLAN_SYSTEM_PROMPT,
+    system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 32768,
     temperature: 0.7,
@@ -409,7 +453,7 @@ export const streamTripPlanFromAnswers = async (
   opts?: { accessToken?: string; userId?: string },
   tripDetails?: TripDetails,
 ) => {
-  const { userPrompt, effectiveDays } = await buildTripPlanPrompt(
+  const { systemPrompt, userPrompt, effectiveDays } = await buildTripPlanPrompt(
     env,
     answers,
     aiQuestions,
@@ -431,7 +475,7 @@ export const streamTripPlanFromAnswers = async (
     }),
     tools,
     stopWhen: stepCountIs(5),
-    system: TRIP_PLAN_SYSTEM_PROMPT,
+    system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 32768,
     temperature: 0.7,
