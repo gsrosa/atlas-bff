@@ -19,7 +19,10 @@ import {
 } from "@/services/ai-generate.service";
 import * as creditsService from "@/services/credits.service";
 import { streamGeminiText } from "@/services/gemini-stream.service";
-import { streamAiInputSchema } from "@/shared/validation-schema/ai-stream";
+import {
+  editTripPlanInputSchema,
+  streamAiInputSchema,
+} from "@/shared/validation-schema/ai-stream";
 import {
   checklistInputSchema,
   tripPlanInputSchema,
@@ -176,7 +179,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
     }
   });
 
-  /** Apply a natural-language edit to an existing trip plan (raw prompts). */
+  /** Apply a natural-language edit to an existing trip plan. */
   r.post("/edit", requireBearerAuth(env), async (req, res) => {
     if (!env.GEMINI_API_KEY) {
       res
@@ -184,7 +187,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
         .json({ error: "AI provider is not configured on the server" });
       return;
     }
-    const parsed = streamAiInputSchema.safeParse(req.body);
+    const parsed = editTripPlanInputSchema.safeParse(req.body);
     if (!parsed.success) {
       res
         .status(400)
@@ -196,7 +199,6 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
     }
     try {
       const result = await editTripPlan(env, {
-        systemPrompt: parsed.data.systemPrompt ?? "",
         userPrompt: parsed.data.userPrompt,
         maxTokens: parsed.data.maxOutputTokens,
         temperature: parsed.data.temperature,
