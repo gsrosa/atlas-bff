@@ -1,6 +1,8 @@
 import { generateObject } from "ai";
+import type { ZodSchema } from "zod";
 
 import { buildAiModel, NO_THINKING } from "@/ai/client";
+import { logAiCall } from "@/ai/logger";
 import type { Env } from "@/env/env";
 import {
   deriveDayCountFromAnswers,
@@ -17,6 +19,58 @@ import {
   tripPlanOutputSchema,
 } from "@/shared/validation-schema/ai-output";
 import type { AiQuestionInput, AnswerMap, TripDetails } from "@/shared/validation-schema/planner-input";
+
+// ─── Logged generateObject wrapper ───────────────────────────────────────────
+
+async function generate<T>(opts: {
+  env: Env;
+  endpoint: string;
+  userId?: string;
+  schema: ZodSchema<T>;
+  system: string;
+  prompt: string;
+  maxOutputTokens: number;
+  temperature: number;
+}): Promise<T> {
+  const start = Date.now();
+  try {
+    const { object, usage } = await generateObject({
+      model: buildAiModel(opts.env),
+      providerOptions: NO_THINKING,
+      schema: opts.schema,
+      system: opts.system,
+      prompt: opts.prompt,
+      maxOutputTokens: opts.maxOutputTokens,
+      temperature: opts.temperature,
+    });
+    logAiCall({
+      correlationId: crypto.randomUUID(),
+      endpoint: opts.endpoint,
+      model: opts.env.GEMINI_MODEL,
+      userId: opts.userId,
+      inputTokens: usage.inputTokens ?? 0,
+      outputTokens: usage.outputTokens ?? 0,
+      latencyMs: Date.now() - start,
+      success: true,
+      zodValid: true,
+    });
+    return object;
+  } catch (err) {
+    logAiCall({
+      correlationId: crypto.randomUUID(),
+      endpoint: opts.endpoint,
+      model: opts.env.GEMINI_MODEL,
+      userId: opts.userId,
+      inputTokens: 0,
+      outputTokens: 0,
+      latencyMs: Date.now() - start,
+      success: false,
+      zodValid: false,
+      errorCode: err instanceof Error ? err.message.slice(0, 120) : "unknown",
+    });
+    throw err;
+  }
+}
 
 // ─── Prompt helpers ───────────────────────────────────────────────────────────
 
@@ -263,16 +317,16 @@ export const generateChecklistFromAnswers = async (
     `4) Any gap you need to build a coherent day-by-day plan (still activity-leaning).\n\n` +
     `Do not re-ask the base fields.`;
 
-  const { object } = await generateObject({
-    model: buildAiModel(env),
-    providerOptions: NO_THINKING,
+  return generate({
+    env,
+    endpoint: "checklist",
+    userId: opts?.userId,
     schema: checklistOutputSchema,
     system: CHECKLIST_SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 8192,
     temperature: 0.7,
   });
-  return object;
 };
 
 export const generateTripPlanFromAnswers = async (
@@ -310,16 +364,16 @@ export const generateTripPlanFromAnswers = async (
     `${mergedContext}\n\n` +
     `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
 
-  const { object } = await generateObject({
-    model: buildAiModel(env),
-    providerOptions: NO_THINKING,
+  return generate({
+    env,
+    endpoint: "trip",
+    userId: opts?.userId,
     schema: tripPlanOutputSchema,
     system: TRIP_PLAN_SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 32768,
     temperature: 0.7,
   });
-  return object;
 };
 
 // ─── Legacy raw-prompt functions (used by /edit) ──────────────────────────────
@@ -335,16 +389,15 @@ export const editTripPlan = async (
   env: Env,
   opts: GenerateOptions,
 ): Promise<TripPlanOutput> => {
-  const { object } = await generateObject({
-    model: buildAiModel(env),
-    providerOptions: NO_THINKING,
+  return generate({
+    env,
+    endpoint: "edit",
     schema: tripPlanOutputSchema,
     system: opts.systemPrompt,
     prompt: opts.userPrompt,
     maxOutputTokens: opts.maxTokens ?? 32768,
     temperature: opts.temperature ?? 0.3,
   });
-  return object;
 };
 
 // ─── Hotel enrichment ────────────────────────────────────────────────────────
@@ -366,16 +419,15 @@ export const enrichHotelInfo = async (
     (checkoutDate ? `\nCheck-out: ${checkoutDate}` : "") +
     `\n\nReturn structured information about this hotel.`;
 
-  const { object } = await generateObject({
-    model: buildAiModel(env),
-    providerOptions: NO_THINKING,
+  return generate({
+    env,
+    endpoint: "hotel-enrich",
     schema: hotelEnrichOutputSchema,
     system: HOTEL_ENRICH_SYSTEM_PROMPT,
     prompt: userPrompt,
     maxOutputTokens: 1024,
     temperature: 0.2,
   });
-  return object;
 };
 
 // ─── Plan modification ────────────────────────────────────────────────────────
@@ -397,14 +449,13 @@ export const applyPlanModification = async (
   itinerary: Record<string, unknown>,
   request: string,
 ): Promise<TripPlanOutput> => {
-  const { object } = await generateObject({
-    model: buildAiModel(env),
-    providerOptions: NO_THINKING,
+  return generate({
+    env,
+    endpoint: "modify",
     schema: tripPlanOutputSchema,
     system: PLAN_MODIFY_SYSTEM_PROMPT,
     prompt: `Current trip plan:\n${JSON.stringify(itinerary, null, 2)}\n\nRequested change:\n${request}`,
     maxOutputTokens: 32768,
     temperature: 0.3,
   });
-  return object;
 };
