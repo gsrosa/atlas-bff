@@ -3,6 +3,16 @@ import type { ZodSchema } from "zod";
 
 import { buildAiModel, NO_THINKING } from "@/ai/client";
 import { logAiCall } from "@/ai/logger";
+import {
+  CHECKLIST_PROMPT_VERSION,
+  CHECKLIST_SYSTEM_PROMPT,
+  HOTEL_ENRICH_PROMPT_VERSION,
+  HOTEL_ENRICH_SYSTEM_PROMPT,
+  PLAN_MODIFY_PROMPT_VERSION,
+  PLAN_MODIFY_SYSTEM_PROMPT,
+  TRIP_PLAN_PROMPT_VERSION,
+  TRIP_PLAN_SYSTEM_PROMPT,
+} from "@/ai/prompts";
 import type { Env } from "@/env/env";
 import {
   deriveDayCountFromAnswers,
@@ -25,6 +35,7 @@ import type { AiQuestionInput, AnswerMap, TripDetails } from "@/shared/validatio
 async function generate<T>(opts: {
   env: Env;
   endpoint: string;
+  promptVersion?: string;
   userId?: string;
   schema: ZodSchema<T>;
   system: string;
@@ -46,6 +57,7 @@ async function generate<T>(opts: {
     logAiCall({
       correlationId: crypto.randomUUID(),
       endpoint: opts.endpoint,
+      promptVersion: opts.promptVersion,
       model: opts.env.GEMINI_MODEL,
       userId: opts.userId,
       inputTokens: usage.inputTokens ?? 0,
@@ -59,6 +71,7 @@ async function generate<T>(opts: {
     logAiCall({
       correlationId: crypto.randomUUID(),
       endpoint: opts.endpoint,
+      promptVersion: opts.promptVersion,
       model: opts.env.GEMINI_MODEL,
       userId: opts.userId,
       inputTokens: 0,
@@ -195,99 +208,7 @@ function buildAiAnswerSummary(questions: AiQuestionInput[], answers: AnswerMap):
     .join("\n");
 }
 
-// ─── System prompts ───────────────────────────────────────────────────────────
-
-const CHECKLIST_SYSTEM_PROMPT = `You are Atlas AI, an expert travel planner.
-The traveller has already completed a fixed questionnaire (group, trip length, budget, climate, regions, accommodation types, pace, special needs, and when they plan to travel).
-
-Your job: generate **5 to 7** follow-up questions focused mainly on **activities, experiences, and priorities** — not on repeating what they already told you.
-
-Rules:
-- Return ONLY valid JSON: { "questions": AiQuestion[] }
-- AiQuestion shape: { "id": string, "question": string, "type": "single"|"multi"|"text", "options": string[]|undefined, "required": boolean optional }
-- At least **half** of the questions must directly address activities or types of experiences (e.g. hiking intensity, museums vs nightlife, water sports, cultural depth, wildlife, photography, food tours).
-- Use **when they plan to go** + **climate** + **regions** to infer season and weather — ask about seasonal activities or alternatives where relevant.
-- Tie suggestions to their **travel pace** (stops per day) and **accommodation mix**.
-- **Accommodation & lodging**: If the traveller did NOT specify accommodation types (value is "Not specified"), include one question asking about preferred stay style or neighbourhood (e.g. "Would you prefer to stay in a central neighbourhood for easy access, or a quieter/local area?"). If they already provided accommodation types, do NOT ask about it again.
-- Use type "single" for mutually exclusive choices (max 4 options)
-- Use type "multi" for non-exclusive choices (max 6 options)
-- Use type "text" for at most **one** question if free text is essential
-- Do not duplicate base questionnaire topics (who, trip length, daily budget, climate pick, region list, pace, special requirements text, travel window)
-- Each id must be a unique slug (e.g. "activity-hiking-level")
-- options must be present and non-empty for "single" and "multi"
-- Keep questions short; option labels 1–4 words
-- No markdown, no code fences, no text outside the single JSON object`;
-
-const TRIP_PLAN_SYSTEM_PROMPT = `You are Atlas AI, an expert travel planner with deep knowledge of destinations worldwide.
-Generate a complete, practical trip plan based on the traveller's preferences.
-
-Return ONLY valid JSON matching this exact schema (types described in TypeScript-like form):
-{
-  "destination": string,
-  "country": string,
-  "bestTravelMonth": string,
-  "weather": {
-    "bestMonth": string,
-    "summary": string,
-    "temperatureRangeCelsius": string
-  },
-  "days": [
-    {
-      "dayNumber": number,
-      "dayTitle": string,
-      "city": string,
-      "country": string (optional),
-      "region": string (optional),
-      "summary": string (optional, one-line overview of the day),
-      "attractions": [
-        {
-          "name": string,
-          "address": string (strongly preferred — full street-level address, e.g. "Rua Augusta 1500, São Paulo" or "10 Downing St, London SW1A 2AA"),
-          "category": string (optional, e.g. museum, viewpoint, hike),
-          "notes": string (optional),
-          "price": { "amount": number, "currency": string } (optional),
-          "averageMinutesSpent": number (optional, typical visit length in minutes),
-          "openingHours": string (optional),
-          "websiteUrl": string (optional, full URL if known)
-        }
-      ],
-      "meals": [ { "name": string, "type": "breakfast"|"lunch"|"dinner"|"snack", "notes": string (optional) } ] (optional),
-      "transportation": [ { "from": string, "to": string, "mode": string, "durationMinutes": number (optional), "notes": string (optional) } ] (optional),
-      "lodging": string (optional)
-    }
-  ],
-  "paidAttractions": [
-    {
-      "name": string,
-      "category": string,
-      "estimatedPriceUsd": string,
-      "notes": string (optional)
-    }
-  ],
-  "meta": object (optional)
-}
-
-Rules:
-- **Every day must set "city"** explicitly — multi-city trips must change city across days as appropriate.
-- **Each "dayNumber" must be unique** — the "days" array must contain exactly one object per day. Never emit two objects with the same "dayNumber". Every field (attractions, meals, transportation, lodging) belongs in that single object.
-- **Attractions** are the primary content per day: realistic names, **always include a full street-level address** (street number, street name, city — e.g. "Av. Paulista, 1578, São Paulo"), optional price and **averageMinutesSpent** (minutes, not hours). The address is critical for map routing — omit only if the place has no fixed address (e.g. a hiking trail; use a descriptive location instead).
-- Choose destination(s) that fit **climate**, **regions**, **when-traveling**, and **daily-investment**. Multi-region: logical routing across days with clear city labels.
-- If the traveller provided a destination in mind, prioritise it unless constraints conflict.
-- Trip length defaults: weekend=2, short=5, week=7, long=12, extended=15 days. If the profile includes exact dates or a custom day count, use that exact number of days.
-- **Travel pace**: relaxed → fewer, deeper attractions; intensive → more stops with shorter averageMinutesSpent.
-- Weather must align with climate + travel window. If a WEATHER FORECAST note is in the profile, use real forecast data for those dates.
-- "temperatureRangeCelsius" must use the Unicode degree symbol: e.g. "20–28°C". Never use escape sequences or ASCII approximations.
-- paidAttractions: fee-based experiences with realistic USD strings and short notes.
-- JSON only — no markdown, no code fences, no extra prose outside the JSON object.
-- Use follow-up answers heavily for activities and priorities.
-
-## Lodging strategy (critical)
-- **Group consecutive days by geographic proximity.** If days 1-3 have attractions in the same area/neighbourhood, assign the same "lodging" value to all three — minimise check-in churn.
-- The "lodging" field must be specific: accommodation type + neighbourhood/area (e.g. "Mid-range hotel in Shinjuku, Tokyo" or "Boutique hostel in El Born, Barcelona"). Never leave it generic like "hotel".
-- When the itinerary shifts to a new area (>30 min travel from previous base), plan a hotel move on the transition day and add a "transportation" leg noting the move (e.g. "Check out and transfer to new hotel in X").
-- If the traveller did NOT specify accommodation types, recommend the best-value option for their budget in each area and explain the choice briefly in the "lodging" field.
-- Aim for the fewest hotel changes possible without sacrificing proximity to daily attractions.
-- For multi-city trips, each city block should have its own lodging suggestion with a specific neighbourhood recommendation.`;
+// Prompts imported from @/ai/prompts — edit prompt files, not here.
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
@@ -320,6 +241,7 @@ export const generateChecklistFromAnswers = async (
   return generate({
     env,
     endpoint: "checklist",
+    promptVersion: CHECKLIST_PROMPT_VERSION,
     userId: opts?.userId,
     schema: checklistOutputSchema,
     system: CHECKLIST_SYSTEM_PROMPT,
@@ -367,6 +289,7 @@ export const generateTripPlanFromAnswers = async (
   return generate({
     env,
     endpoint: "trip",
+    promptVersion: TRIP_PLAN_PROMPT_VERSION,
     userId: opts?.userId,
     schema: tripPlanOutputSchema,
     system: TRIP_PLAN_SYSTEM_PROMPT,
@@ -402,10 +325,6 @@ export const editTripPlan = async (
 
 // ─── Hotel enrichment ────────────────────────────────────────────────────────
 
-const HOTEL_ENRICH_SYSTEM_PROMPT = `You are Atlas AI, a travel expert with encyclopedic knowledge of hotels worldwide.
-Given a hotel name, destination, and check-in/check-out dates, return accurate structured information about that hotel.
-Return ONLY valid JSON — no markdown, no code fences, no extra text.`;
-
 export const enrichHotelInfo = async (
   env: Env,
   name: string,
@@ -422,6 +341,7 @@ export const enrichHotelInfo = async (
   return generate({
     env,
     endpoint: "hotel-enrich",
+    promptVersion: HOTEL_ENRICH_PROMPT_VERSION,
     schema: hotelEnrichOutputSchema,
     system: HOTEL_ENRICH_SYSTEM_PROMPT,
     prompt: userPrompt,
@@ -432,18 +352,6 @@ export const enrichHotelInfo = async (
 
 // ─── Plan modification ────────────────────────────────────────────────────────
 
-const PLAN_MODIFY_SYSTEM_PROMPT = `You are Atlas AI, an expert travel planner.
-Apply ONLY the explicitly requested change to the existing trip plan.
-
-CRITICAL PRESERVATION RULES:
-- Copy every field of every unchanged day EXACTLY as-is from the input JSON — attractions arrays, meals, transportation, notes, addresses, prices, everything.
-- Do NOT regenerate, rewrite, paraphrase, or summarise any existing content.
-- If the request only affects the "lodging" field: update ONLY that field for the specified days. Leave all other fields (attractions, meals, transportation, city, title, etc.) completely untouched.
-- If new days must be added (e.g. trip extended): generate content only for the new days.
-- If days must be removed (e.g. trip shortened): remove only the excess days, keep the rest verbatim.
-- Return the COMPLETE updated plan (all days) as valid JSON using the same schema as the input.
-- JSON only — no markdown, no code fences, no extra prose.`;
-
 export const applyPlanModification = async (
   env: Env,
   itinerary: Record<string, unknown>,
@@ -452,6 +360,7 @@ export const applyPlanModification = async (
   return generate({
     env,
     endpoint: "modify",
+    promptVersion: PLAN_MODIFY_PROMPT_VERSION,
     schema: tripPlanOutputSchema,
     system: PLAN_MODIFY_SYSTEM_PROMPT,
     prompt: `Current trip plan:\n${JSON.stringify(itinerary, null, 2)}\n\nRequested change:\n${request}`,
