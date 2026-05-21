@@ -9,7 +9,7 @@ config({ path: resolve(process.cwd(), '.env') });
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
-  console.error('DATABASE_URL is not set. Add it to .env.local.');
+  process.stderr.write('DATABASE_URL is not set. Add it to .env.local.\n');
   process.exit(1);
 }
 
@@ -36,7 +36,7 @@ async function run() {
   const pending = files.filter((f) => !applied.has(f));
 
   if (pending.length === 0) {
-    console.log('No pending migrations.');
+    process.stdout.write('No pending migrations.\n');
     await sql.end();
     return;
   }
@@ -44,19 +44,19 @@ async function run() {
   for (const file of pending) {
     const filePath = join(MIGRATIONS_DIR, file);
     const content = readFileSync(filePath, 'utf8');
-    console.log(`Applying ${file}…`);
+    process.stdout.write(`Applying ${file}...\n`);
     await sql.begin(async (tx) => {
       await tx.unsafe(content);
       await tx`INSERT INTO _migrations (name) VALUES (${file})`;
     });
-    console.log(`  ✓ ${file}`);
+    process.stdout.write(`  done ${file}\n`);
   }
 
-  console.log(`\nDone — ${pending.length} migration(s) applied.`);
+  process.stdout.write(`\nDone: ${pending.length} migration(s) applied.\n`);
   await sql.end();
 }
 
 run().catch((err) => {
-  console.error('Migration failed:', err);
+  process.stderr.write(`Migration failed: ${String(err)}\n`);
   process.exit(1);
 });

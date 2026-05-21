@@ -2,7 +2,9 @@ import type { TravelerProfile } from "@/shared/validation-schema/traveler-profil
 
 type PartialProfile = Partial<TravelerProfile> & Record<string, unknown>;
 
-function fmt(value: string | string[] | number | boolean | undefined | null): string {
+function fmt(
+  value: string | string[] | number | boolean | undefined | null,
+): string {
   if (value === undefined || value === null) return "";
   if (Array.isArray(value)) return value.join(", ") || "";
   if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -37,17 +39,19 @@ function stimulationLabel(v: number | undefined): string {
   return "Moderate stimulation";
 }
 
-/**
- * Serializes stored traveler preferences + trip answer summary for the LLM system/user prompt.
- * `tripSummaryText` should be the existing buildAnswerSummary output (and optional AI follow-ups).
- */
-export function buildAIContextBlock(profile: PartialProfile | null | undefined, tripSummaryText: string): string {
+export function buildAIContextBlock(
+  profile: PartialProfile | null | undefined,
+  tripSummaryText: string,
+): string {
   if (!profile || Object.keys(profile).length === 0) {
     return tripSummaryText.trim();
   }
 
   const p = profile;
-  const allergies = typeof p.foodAllergies === "string" && p.foodAllergies.trim() ? p.foodAllergies.trim() : "";
+  const allergies =
+    typeof p.foodAllergies === "string" && p.foodAllergies.trim()
+      ? p.foodAllergies.trim()
+      : "";
 
   const userBlock = [
     "[User Profile]",
@@ -56,18 +60,32 @@ export function buildAIContextBlock(profile: PartialProfile | null | undefined, 
     p.foodAdventurousness !== undefined
       ? `Food adventurousness: ${p.foodAdventurousness}/5.`
       : "",
-    p.foodImportance !== undefined ? `Food importance on trips: ${p.foodImportance}/5.` : "",
-    p.restaurantStyles?.length ? `Restaurant preferences: ${fmt(p.restaurantStyles)}.` : "",
-    p.drinksAlcohol !== undefined ? `Drinks alcohol: ${fmt(p.drinksAlcohol)}.` : "",
-    p.urbanVsNature !== undefined ? `Environment: ${urbanNatureLabel(p.urbanVsNature as number)}.` : "",
-    p.landscapeTypes?.length ? `Preferred landscapes: ${fmt(p.landscapeTypes)}.` : "",
+    p.foodImportance !== undefined
+      ? `Food importance on trips: ${p.foodImportance}/5.`
+      : "",
+    p.restaurantStyles?.length
+      ? `Restaurant preferences: ${fmt(p.restaurantStyles)}.`
+      : "",
+    p.drinksAlcohol !== undefined
+      ? `Drinks alcohol: ${fmt(p.drinksAlcohol)}.`
+      : "",
+    p.urbanVsNature !== undefined
+      ? `Environment: ${urbanNatureLabel(p.urbanVsNature as number)}.`
+      : "",
+    p.landscapeTypes?.length
+      ? `Preferred landscapes: ${fmt(p.landscapeTypes)}.`
+      : "",
     p.climateTolerance ? `Climate tolerance: ${p.climateTolerance}.` : "",
-    p.altitudeSensitive !== undefined ? `Altitude sensitive: ${fmt(p.altitudeSensitive)}.` : "",
+    p.altitudeSensitive !== undefined
+      ? `Altitude sensitive: ${fmt(p.altitudeSensitive)}.`
+      : "",
     p.stimulationPreference !== undefined
       ? `Stimulation preference: ${stimulationLabel(p.stimulationPreference as number)}.`
       : "",
     p.discoveryStyle ? `Exploration style: ${p.discoveryStyle}.` : "",
-    p.depthVsBreadth !== undefined ? `Depth vs breadth (1=deep, 5=broad): ${p.depthVsBreadth}/5.` : "",
+    p.depthVsBreadth !== undefined
+      ? `Depth vs breadth (1=deep, 5=broad): ${p.depthVsBreadth}/5.`
+      : "",
     p.crowdTolerance ? `Crowd tolerance: ${p.crowdTolerance}.` : "",
     p.travelPersonality ? `Travel personality: ${p.travelPersonality}.` : "",
     p.localInteraction ? `Local interaction: ${p.localInteraction}.` : "",
@@ -76,20 +94,30 @@ export function buildAIContextBlock(profile: PartialProfile | null | undefined, 
       ? `Photography importance: ${p.photographyImportance}/5.`
       : "",
     p.budgetStyle ? `Budget philosophy: ${p.budgetStyle}.` : "",
-    p.accommodationStyles?.length ? `Accommodation types: ${fmt(p.accommodationStyles as string[])}.` : "",
-    p.accommodationMustHaves?.length ? `Accommodation must-haves: ${fmt(p.accommodationMustHaves)}.` : "",
+    p.accommodationStyles?.length
+      ? `Accommodation types: ${fmt(p.accommodationStyles as string[])}.`
+      : "",
+    p.accommodationMustHaves?.length
+      ? `Accommodation must-haves: ${fmt(p.accommodationMustHaves)}.`
+      : "",
     p.fitnessLevel ? `Fitness level: ${p.fitnessLevel}.` : "",
     p.connectivityNeeds ? `Connectivity: ${p.connectivityNeeds}.` : "",
     p.languageComfort ? `Language comfort: ${p.languageComfort}.` : "",
-    p.wellnessImportance !== undefined ? `Wellness importance: ${p.wellnessImportance}/5.` : "",
+    p.wellnessImportance !== undefined
+      ? `Wellness importance: ${p.wellnessImportance}/5.`
+      : "",
     p.ecoConsciousness ? `Sustainability stance: ${p.ecoConsciousness}.` : "",
     p.ethicalLimits?.length ? `Ethical limits: ${fmt(p.ethicalLimits)}.` : "",
-    p.tripMemorableBy ? `What makes trips unforgettable: ${p.tripMemorableBy}.` : "",
+    p.tripMemorableBy
+      ? `What makes trips unforgettable: ${p.tripMemorableBy}.`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
 
-  const tripBlock = tripSummaryText.trim() ? `\n[This Trip]\n${tripSummaryText.trim()}` : "";
+  const tripBlock = tripSummaryText.trim()
+    ? `\n[This Trip]\n${tripSummaryText.trim()}`
+    : "";
 
   const diet = dietLabel(String(p.diet));
   const effectiveDietary = [diet, allergies].filter(Boolean).join(" — ");

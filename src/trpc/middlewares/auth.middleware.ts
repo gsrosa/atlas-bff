@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 
+import { resolveSession } from "@/config/session/session";
+import { parseSessionIdFromCookie } from "@/config/session/session-cookie";
 import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
-import { resolveSession } from "@/sessions/session";
-import { parseSessionIdFromCookie } from "@/sessions/session-cookie";
 import { parseBearer } from "@/utils/parse-bearer";
 
 import type { middleware } from "../router.js";

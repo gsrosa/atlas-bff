@@ -1,11 +1,11 @@
-import * as userProfileService from "@/services/user-profile.service";
+import { UserProfileService } from "@/services/user-profile.service";
 import { patchProfileInputSchema } from "@/shared/validation-schema/user-profile";
 
 import { protectedProcedure, router } from "../router.js";
 
 export const usersRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
-    return userProfileService.getProfile(
+    return UserProfileService.getProfile(
       ctx.env,
       ctx.accessToken!,
       ctx.user!.id,
@@ -14,7 +14,7 @@ export const usersRouter = router({
   }),
 
   updateMe: protectedProcedure.input(patchProfileInputSchema).mutation(async ({ ctx, input }) => {
-    return userProfileService.updateProfile(
+    return UserProfileService.updateProfile(
       ctx.env,
       ctx.accessToken!,
       ctx.user!.id,

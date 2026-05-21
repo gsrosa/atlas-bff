@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAIContextBlock } from "@/services/traveler-profile-ai-context";
+import { buildAIContextBlock } from "@/services/ai-services/traveler-profile-ai-context";
 
 describe("buildAIContextBlock", () => {
   it("returns trip-only text when profile is empty", () => {

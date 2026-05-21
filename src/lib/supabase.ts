@@ -6,7 +6,6 @@ import {
 
 import type { Env } from "@/env";
 
-/** Validates JWTs and admin auth operations. Never expose this key to clients. */
 export const createServiceClient = (env: Env): SupabaseClient => {
   return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: {
@@ -16,10 +15,6 @@ export const createServiceClient = (env: Env): SupabaseClient => {
   });
 };
 
-/**
- * Supabase client scoped to the caller's JWT so Postgres RLS policies apply.
- * Use this for all user data access (profiles, plans).
- */
 export const createUserScopedClient = (
   env: Env,
   accessToken: string,

@@ -1,9 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
-import { TRPCError } from "@trpc/server";
 import type { z } from "zod";
 
 import type { Env } from "@/env";
-import { createServiceClient, createUserScopedClient } from "@/lib/supabase";
+import { AuthModel } from "@/models/auth.model";
+import {
+  BadRequestError,
+  InternalServerError,
+  UnauthorizedError,
+} from "@/shared/errors";
 import {
   type changePasswordInputSchema,
   type refreshInputSchema,
@@ -62,13 +65,13 @@ function isDuplicateSignUpError(error: {
   return c === "user_already_exists" || c === "email_exists";
 }
 
-export const signUp = async (env: Env, input: SignUpInput) => {
-  const service = createServiceClient(env);
-  const displayName = `${input.firstName} ${input.lastName}`.trim();
-  const { data, error } = await service.auth.signUp({
-    email: input.email,
-    password: input.password,
-    options: {
+export class AuthService {
+  static async signUp(env: Env, input: SignUpInput) {
+    const displayName = `${input.firstName} ${input.lastName}`.trim();
+
+    const { data, error } = await AuthModel.signUp(env, {
+      email: input.email,
+      password: input.password,
       data: {
         first_name: input.firstName,
         last_name: input.lastName,
@@ -78,135 +81,100 @@ export const signUp = async (env: Env, input: SignUpInput) => {
         country: input.country,
         display_name: displayName,
       },
-    },
-  });
-  if (error) {
-    if (isAuthTransportFailure(error)) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: describeAuthTransportFailure(error),
-        cause: error,
-      });
-    }
-    if (isDuplicateSignUpError(error)) {
-      const signedIn = await service.auth.signInWithPassword({
-        email: input.email,
-        password: input.password,
-      });
-      if (signedIn.error) {
-        if (isAuthTransportFailure(signedIn.error)) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: describeAuthTransportFailure(signedIn.error),
-            cause: signedIn.error,
-          });
-        }
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            signedIn.error.message ||
-            "This email is already registered. Use the correct password to sign in, or reset your password.",
-          cause: signedIn.error,
-        });
+    });
+
+    if (error) {
+      if (isAuthTransportFailure(error)) {
+        throw new InternalServerError(
+          describeAuthTransportFailure(error),
+          error,
+        );
       }
-      return {
-        user: signedIn.data.user,
-        session: signedIn.data.session,
-        needsEmailConfirmation: false,
-        resumedAsSignIn: true as const,
-      };
+      if (isDuplicateSignUpError(error)) {
+        const { data: signedIn, error: signInErr } =
+          await AuthModel.signInWithPassword(env, {
+            email: input.email,
+            password: input.password,
+          });
+        if (signInErr) {
+          if (isAuthTransportFailure(signInErr)) {
+            throw new InternalServerError(
+              describeAuthTransportFailure(signInErr),
+              signInErr,
+            );
+          }
+          throw new BadRequestError(
+            signInErr.message ||
+              "This email is already registered. Use the correct password to sign in, or reset your password.",
+            signInErr,
+          );
+        }
+        return {
+          user: signedIn.user,
+          session: signedIn.session,
+          needsEmailConfirmation: false,
+          resumedAsSignIn: true as const,
+        };
+      }
+      throw new BadRequestError(error.message, error);
     }
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error.message,
-      cause: error,
-    });
-  }
-  /** When Supabase has "Confirm email" enabled, `session` is null until the user confirms. */
-  const needsEmailConfirmation = Boolean(data.user && !data.session);
-  return { user: data.user, session: data.session, needsEmailConfirmation };
-};
 
-export const signIn = async (env: Env, input: SignInInput) => {
-  const service = createServiceClient(env);
-  const { data, error } = await service.auth.signInWithPassword({
-    email: input.email,
-    password: input.password,
-  });
-  if (error) {
-    if (isAuthTransportFailure(error)) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: describeAuthTransportFailure(error),
-        cause: error,
-      });
+    const needsEmailConfirmation = Boolean(data.user && !data.session);
+    return { user: data.user, session: data.session, needsEmailConfirmation };
+  }
+
+  static async signIn(env: Env, input: SignInInput) {
+    const { data, error } = await AuthModel.signInWithPassword(env, {
+      email: input.email,
+      password: input.password,
+    });
+    if (error) {
+      if (isAuthTransportFailure(error)) {
+        throw new InternalServerError(
+          describeAuthTransportFailure(error),
+          error,
+        );
+      }
+      throw new UnauthorizedError(
+        error.message || "Invalid email or password",
+        error,
+      );
     }
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      /** Supabase messages include "Email not confirmed", "Invalid login credentials", etc. */
-      message: error.message || "Invalid email or password",
-      cause: error,
-    });
+    return { user: data.user, session: data.session };
   }
-  return { user: data.user, session: data.session };
-};
 
-export const refreshSession = async (env: Env, input: RefreshInput) => {
-  const service = createServiceClient(env);
-  const { data, error } = await service.auth.refreshSession({
-    refresh_token: input.refresh_token,
-  });
-  if (error || !data.session) {
-    if (error && isAuthTransportFailure(error)) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: describeAuthTransportFailure(error),
-        cause: error,
-      });
+  static async refreshSession(env: Env, input: RefreshInput) {
+    const { data, error } = await AuthModel.refreshSession(
+      env,
+      input.refresh_token,
+    );
+    if (error || !data.session) {
+      if (error && isAuthTransportFailure(error)) {
+        throw new InternalServerError(
+          describeAuthTransportFailure(error),
+          error,
+        );
+      }
+      throw new UnauthorizedError("Invalid refresh token", error ?? undefined);
     }
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Invalid refresh token",
-      cause: error,
-    });
-  }
-  return { user: data.user, session: data.session };
-};
-
-/**
- * Verifies the current password with a stateless client, then updates password on the active session.
- */
-export const changePassword = async (
-  env: Env,
-  accessToken: string,
-  email: string,
-  input: ChangePasswordInput,
-) => {
-  const verify = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  const { error: verifyErr } = await verify.auth.signInWithPassword({
-    email,
-    password: input.currentPassword,
-  });
-  if (verifyErr) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Current password is incorrect",
-      cause: verifyErr,
-    });
+    return { user: data.user, session: data.session };
   }
 
-  const userClient = createUserScopedClient(env, accessToken);
-  const { error: updErr } = await userClient.auth.updateUser({
-    password: input.newPassword,
-  });
-  if (updErr) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: updErr.message,
-      cause: updErr,
+  static async changePassword(
+    env: Env,
+    accessToken: string,
+    email: string,
+    input: ChangePasswordInput,
+  ) {
+    const { error: verifyErr } = await AuthModel.verifyPassword(env, {
+      email,
+      password: input.currentPassword,
     });
+    if (verifyErr) {
+      throw new BadRequestError("Current password is incorrect", verifyErr);
+    }
+
+    await AuthModel.updatePassword(env, accessToken, input.newPassword);
+    return { ok: true as const };
   }
-  return { ok: true as const };
-};
+}

@@ -1,5 +1,5 @@
 import type { Env } from "@/env";
-import { createServiceClient } from "@/lib/supabase";
+import { RagModel } from "@/models/rag.model";
 
 import { embedText } from "./embed";
 
@@ -38,20 +38,15 @@ export async function retrieveDestinationContext(
   opts: RetrieveDestinationContextOptions = {},
 ): Promise<DestinationContextChunk[]> {
   const embedding = await embedText(env, query);
-  const client = createServiceClient(env);
-  const { data, error } = await client.rpc("match_destination_knowledge", {
-    query_embedding: embedding,
-    match_count: opts.limit ?? 5,
-    match_threshold: opts.threshold ?? 0.75,
-    destination_filter: opts.destination ?? null,
-    country_filter: opts.country ?? null,
+  const data = await RagModel.matchDestinationKnowledge(env, {
+    embedding,
+    matchCount: opts.limit ?? 5,
+    matchThreshold: opts.threshold ?? 0.75,
+    destinationFilter: opts.destination ?? null,
+    countryFilter: opts.country ?? null,
   });
 
-  if (error) {
-    throw new Error(`Destination context retrieval failed: ${error.message}`);
-  }
-
-  return ((data ?? []) as DestinationKnowledgeRow[]).map((row) => ({
+  return (data as DestinationKnowledgeRow[]).map((row) => ({
     id: row.id,
     destination: row.destination,
     country: row.country,

@@ -13,5 +13,5 @@ export interface AiCallLog {
 }
 
 export function logAiCall(entry: AiCallLog): void {
-  console.log(JSON.stringify({ level: "ai_call", ...entry }));
+  process.stdout.write(`${JSON.stringify({ level: "ai_call", ...entry })}\n`);
 }

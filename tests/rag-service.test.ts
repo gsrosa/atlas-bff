@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildKnowledgeEmbeddingText } from "@/services/rag.service";
+import { RagService } from "@/services/ai-services/rag.service";
 
 describe("buildKnowledgeEmbeddingText", () => {
   it("builds stable embedding input from knowledge fields", () => {
     expect(
-      buildKnowledgeEmbeddingText({
+      RagService.buildKnowledgeEmbeddingText({
         destination: "Tokyo",
         country: "Japan",
         title: "Routing",

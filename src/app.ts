@@ -5,12 +5,12 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
 import type { Env } from "@/env";
-import { createMeRouter } from "@/http/me-router";
-import { createPlanStreamRouter } from "@/http/plan-stream-router";
-import { requireBearerAuth } from "@/middleware/require-bearer-auth";
 import { createContextFactory } from "@/trpc/context";
 import { trpcOnError } from "@/trpc/error-handler";
+import { requireBearerAuth } from "@/trpc/middlewares/require-bearer-auth.middleware";
 import { appRouter } from "@/trpc/routes/_app";
+import { createMeRouter } from "@/trpc/routes/http/me-router";
+import { createPlanStreamRouter } from "@/trpc/routes/http/plan-stream-router";
 
 const normalizeOrigin = (origin: string): string => {
   try {
@@ -88,7 +88,7 @@ export const createApp = (env: Env): Express => {
   const plansAiLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 10,
-    keyGenerator: (req) => req.atlasUser?.id ?? req.ip ?? "unknown",
+    keyGenerator: (req) => req.nexploringUser?.id ?? req.ip ?? "unknown",
     standardHeaders: "draft-7",
     legacyHeaders: false,
     message: { error: "AI_RATE_LIMIT" },

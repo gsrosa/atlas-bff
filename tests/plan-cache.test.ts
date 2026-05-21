@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPlanCacheKey } from "@/services/ai-generate.service";
+import { buildPlanCacheKey } from "@/services/ai-services/ai-generate.service";
 
 describe("buildPlanCacheKey", () => {
   it("is stable for equivalent object key ordering", () => {

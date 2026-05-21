@@ -1,18 +1,9 @@
+import { UserRequestValidationError } from "@/shared/errors";
+
+export type { UserRequestValidationError };
+
 export interface SanitizeUserRequestOptions {
   maxLength?: number;
-}
-
-export class UserRequestValidationError extends Error {
-  readonly code: "EMPTY_REQUEST" | "REQUEST_TOO_LONG" | "NON_TRAVEL_REQUEST";
-
-  constructor(
-    code: "EMPTY_REQUEST" | "REQUEST_TOO_LONG" | "NON_TRAVEL_REQUEST",
-    message: string,
-  ) {
-    super(message);
-    this.name = "UserRequestValidationError";
-    this.code = code;
-  }
 }
 
 const DEFAULT_MAX_LENGTH = 10_000;

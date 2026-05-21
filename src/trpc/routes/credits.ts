@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import * as creditsService from "@/services/credits.service";
+import { CreditsService } from "@/services/credits.service";
+import { ForbiddenError } from "@/shared/errors";
 
 import { protectedProcedure, router } from "../router.js";
 
@@ -12,7 +12,7 @@ const addFundsInputSchema = z.object({
 
 export const creditsRouter = router({
   balance: protectedProcedure.query(async ({ ctx }) => {
-    return creditsService.getBalance(ctx.env, ctx.accessToken!, ctx.user!.id);
+    return CreditsService.getBalance(ctx.env, ctx.accessToken!, ctx.user!.id);
   }),
 
   list: protectedProcedure
@@ -21,18 +21,27 @@ export const creditsRouter = router({
       page: z.number().int().min(0).optional().default(0),
     }))
     .query(async ({ ctx, input }) => {
-      return creditsService.listTransactions(ctx.env, ctx.accessToken!, ctx.user!.id, input.limit, input.page);
+      return CreditsService.listTransactions(
+        ctx.env,
+        ctx.accessToken!,
+        ctx.user!.id,
+        input.limit,
+        input.page,
+      );
     }),
 
   addFunds: protectedProcedure.input(addFundsInputSchema).mutation(async ({ ctx, input }) => {
     if (!ctx.env.CREDITS_ALLOW_SELF_TOPUP) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Credit top-up is disabled. Use a payment integration or enable CREDITS_ALLOW_SELF_TOPUP in development.",
-      });
+      throw new ForbiddenError(
+        "Credit top-up is disabled. Use a payment integration or enable CREDITS_ALLOW_SELF_TOPUP in development.",
+      );
     }
-    return creditsService.addFundsForUser(ctx.env, ctx.user!.id, input.amount, input.reason ?? "manual_topup", {
-      source: "bff_self_topup",
-    });
+    return CreditsService.addFundsForUser(
+      ctx.env,
+      ctx.user!.id,
+      input.amount,
+      input.reason ?? "manual_topup",
+      { source: "bff_self_topup" },
+    );
   }),
 });

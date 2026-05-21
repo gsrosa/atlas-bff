@@ -3,9 +3,9 @@ import { resolve } from "node:path";
 
 import { loadEnv } from "@/env";
 import {
-  upsertKnowledge,
+  RagService,
   type UpsertKnowledgeInput,
-} from "@/services/rag.service";
+} from "@/services/ai-services/rag.service";
 
 const DEFAULT_SEED_PATH = "scripts/destination-knowledge.seed.json";
 
@@ -17,14 +17,14 @@ async function main() {
   const env = loadEnv();
 
   for (const entry of entries) {
-    const row = await upsertKnowledge(env, entry);
-    console.log(
-      `seeded ${row.destination}${row.country ? `, ${row.country}` : ""}: ${row.title}`,
+    const row = await RagService.upsertKnowledge(env, entry);
+    process.stdout.write(
+      `seeded ${row.destination}${row.country ? `, ${row.country}` : ""}: ${row.title}\n`,
     );
   }
 }
 
 main().catch((err) => {
-  console.error(err);
+  process.stderr.write(`${String(err)}\n`);
   process.exitCode = 1;
 });

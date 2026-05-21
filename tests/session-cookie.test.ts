@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseSessionIdFromCookie } from "@/sessions/session-cookie";
+import { parseSessionIdFromCookie } from "@/config/session/session-cookie";
 
 import { buildTestEnv } from "./helpers/test-env";
 

@@ -1,11 +1,6 @@
 {
   "buildCommand": "pnpm run build",
   "installCommand": "HUSKY=0 pnpm install --no-frozen-lockfile",
-  "functions": {
-    "dist/index.js": {
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",

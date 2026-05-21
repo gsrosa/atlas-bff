@@ -1,10 +1,15 @@
-import { TRPCError } from "@trpc/server";
 import type { z } from "zod";
 
 import type { Env } from "@/env";
-import { createUserScopedClient } from "@/lib/supabase";
-import * as creditsService from "@/services/credits.service";
-import type { TripPlanDTO } from "@/shared/dtos/trip-plan";
+import { CreditsModel } from "@/models/credits.model";
+import { TripPlansModel } from "@/models/trip-plans.model";
+import { CreditsService } from "@/services/credits.service";
+import {
+  TripPlanDTOMapper,
+  type TripPlanResponseDTO,
+  type TripPlansResponseDTO,
+} from "@/shared/dtos/trip-plan";
+import { ForbiddenError } from "@/shared/errors";
 import {
   type createTripPlanInputSchema,
   type patchTripPlanInputSchema,
@@ -13,206 +18,83 @@ import {
 type CreateTripPlanInput = z.infer<typeof createTripPlanInputSchema>;
 type PatchTripPlanInput = z.infer<typeof patchTripPlanInputSchema>;
 
-const mapInputToRow = (input: CreateTripPlanInput) => ({
-  title: input.title ?? null,
-  ai_suggested_title: input.aiSuggestedTitle ?? null,
-  departure_at: input.departureAt ?? null,
-  arrival_at: input.arrivalAt ?? null,
-  flight_numbers: input.flightNumbers,
-  days_count: input.daysCount ?? null,
-  destination: input.destination ?? null,
-  destination_country: input.destinationCountry ?? null,
-  form_snapshot: input.formSnapshot,
-  itinerary: input.itinerary,
-});
-
-export const listTripPlans = async (
-  env: Env,
-  accessToken: string,
-  limit: number,
-  page: number,
-): Promise<{
-  plans: TripPlanDTO[];
-  total: number;
-  page: number;
-  limit: number;
-}> => {
-  const from = page * limit;
-  const to = from + limit - 1;
-  const client = createUserScopedClient(env, accessToken);
-  const { data, error, count } = await client
-    .from("trip_plans")
-    .select("*", { count: "exact" })
-    .order("updated_at", { ascending: false })
-    .range(from, to);
-  if (error) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error.message,
-      cause: error,
-    });
-  }
-  return {
-    plans: (data ?? []) as TripPlanDTO[],
-    total: count ?? 0,
-    page,
-    limit,
-  };
-};
-
-export const createTripPlan = async (
-  env: Env,
-  accessToken: string,
-  userId: string,
-  input: CreateTripPlanInput,
-): Promise<{ plan: TripPlanDTO }> => {
-  const cost = env.CREDITS_TRIP_PLAN_COST;
-  if (cost > 0) {
-    const { balance } = await creditsService.getBalance(
+export class TripPlansService {
+  static async listTripPlans(
+    env: Env,
+    accessToken: string,
+    limit: number,
+    page: number,
+  ): Promise<TripPlansResponseDTO> {
+    const { plans, total } = await TripPlansModel.findAllByUserId(
       env,
       accessToken,
-      userId,
+      limit,
+      page,
     );
-    if (balance < cost) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Not enough credits to save this trip plan",
-      });
+    return TripPlanDTOMapper.toListResponse({ plans, total, page, limit });
+  }
+
+  static async createTripPlan(
+    env: Env,
+    accessToken: string,
+    userId: string,
+    input: CreateTripPlanInput,
+  ): Promise<TripPlanResponseDTO> {
+    const cost = env.CREDITS_TRIP_PLAN_COST;
+    if (cost > 0) {
+      const { balance } = await CreditsModel.getBalance(env, accessToken, userId);
+      if (balance < cost) {
+        throw new ForbiddenError("Not enough credits to save this trip plan");
+      }
     }
-  }
 
-  const client = createUserScopedClient(env, accessToken);
-  const row = {
-    user_id: userId,
-    ...mapInputToRow(input),
-  };
+    const row = TripPlanDTOMapper.createInputToAPI(userId, input);
+    const plan = await TripPlansModel.create(env, accessToken, row);
 
-  const { data, error } = await client
-    .from("trip_plans")
-    .insert(row)
-    .select()
-    .single();
-  if (error) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error.message,
-      cause: error,
-    });
-  }
-
-  const plan = data as TripPlanDTO;
-
-  if (cost > 0) {
-    try {
-      await creditsService.applyCredit(env, {
-        userId,
-        delta: -cost,
-        reason: "trip_plan_create",
-        referenceType: "trip_plan",
-        referenceId: plan.id,
-        metadata: { title: plan.title },
-      });
-    } catch (e) {
-      await client.from("trip_plans").delete().eq("id", plan.id);
-      throw e;
+    if (cost > 0) {
+      try {
+        await CreditsService.applyCredit(env, {
+          userId,
+          delta: -cost,
+          reason: "trip_plan_create",
+          referenceType: "trip_plan",
+          referenceId: plan.id,
+          metadata: { title: plan.title },
+        });
+      } catch (e) {
+        await TripPlansModel.delete(env, accessToken, plan.id);
+        throw e;
+      }
     }
+
+    return TripPlanDTOMapper.toResponse(plan);
   }
 
-  return { plan };
-};
+  static async getTripPlanById(
+    env: Env,
+    accessToken: string,
+    id: string,
+  ): Promise<TripPlanResponseDTO> {
+    const plan = await TripPlansModel.findById(env, accessToken, id);
+    return TripPlanDTOMapper.toResponse(plan);
+  }
 
-export const getTripPlanById = async (
-  env: Env,
-  accessToken: string,
-  id: string,
-): Promise<{ plan: TripPlanDTO }> => {
-  const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client
-    .from("trip_plans")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error.message,
-      cause: error,
-    });
+  static async updateTripPlan(
+    env: Env,
+    accessToken: string,
+    id: string,
+    input: PatchTripPlanInput,
+  ): Promise<TripPlanResponseDTO> {
+    const updates = TripPlanDTOMapper.patchInputToAPI(input);
+    const plan = await TripPlansModel.update(env, accessToken, id, updates);
+    return TripPlanDTOMapper.toResponse(plan);
   }
-  if (!data) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Trip plan not found" });
-  }
-  return { plan: data as TripPlanDTO };
-};
 
-export const updateTripPlan = async (
-  env: Env,
-  accessToken: string,
-  id: string,
-  input: PatchTripPlanInput,
-): Promise<{ plan: TripPlanDTO }> => {
-  const client = createUserScopedClient(env, accessToken);
-  const updates: Record<string, unknown> = {
-    updated_at: new Date().toISOString(),
-  };
-  if (input.title !== undefined) updates.title = input.title;
-  if (input.aiSuggestedTitle !== undefined)
-    updates.ai_suggested_title = input.aiSuggestedTitle;
-  if (input.departureAt !== undefined) updates.departure_at = input.departureAt;
-  if (input.arrivalAt !== undefined) updates.arrival_at = input.arrivalAt;
-  if (input.flightNumbers !== undefined)
-    updates.flight_numbers = input.flightNumbers;
-  if (input.flights !== undefined) {
-    updates.flight_numbers = input.flights
-      .map((f) => f.flightNumber)
-      .filter(Boolean);
+  static async deleteTripPlan(
+    env: Env,
+    accessToken: string,
+    id: string,
+  ): Promise<void> {
+    await TripPlansModel.delete(env, accessToken, id);
   }
-  if (input.daysCount !== undefined) updates.days_count = input.daysCount;
-  if (input.destination !== undefined) updates.destination = input.destination;
-  if (input.destinationCountry !== undefined)
-    updates.destination_country = input.destinationCountry;
-  if (input.formSnapshot !== undefined)
-    updates.form_snapshot = input.formSnapshot;
-  if (input.itinerary !== undefined) updates.itinerary = input.itinerary;
-
-  const { data, error } = await client
-    .from("trip_plans")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error.message,
-      cause: error,
-    });
-  }
-  if (!data) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Trip plan not found" });
-  }
-  return { plan: data as TripPlanDTO };
-};
-
-export const deleteTripPlan = async (
-  env: Env,
-  accessToken: string,
-  id: string,
-): Promise<void> => {
-  const client = createUserScopedClient(env, accessToken);
-  const { data, error } = await client
-    .from("trip_plans")
-    .delete()
-    .eq("id", id)
-    .select("id");
-  if (error) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: error.message,
-      cause: error,
-    });
-  }
-  if (!data?.length) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Trip plan not found" });
-  }
-};
+}

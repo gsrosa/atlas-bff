@@ -16,7 +16,9 @@ const isVercel = process.env.VERCEL === "1";
 
 if (!isVercel) {
   app.listen(env.PORT, () => {
-    console.log(`atlas-bff listening on http://127.0.0.1:${env.PORT}`);
+    process.stdout.write(
+      `nexploring-bff listening on http://127.0.0.1:${env.PORT}\n`,
+    );
   });
 }
 

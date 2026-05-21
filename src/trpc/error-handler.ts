@@ -30,6 +30,6 @@ export const errorFormatter = ({
 
 export const trpcOnError: HTTPErrorHandler<AnyRouter, Request> = (opts) => {
   if (process.env.NODE_ENV !== "production") {
-    console.error(`tRPC error on '${opts.path}':`, opts.error);
+    process.stderr.write(`tRPC error on '${opts.path}': ${opts.error.message}\n`);
   }
 };

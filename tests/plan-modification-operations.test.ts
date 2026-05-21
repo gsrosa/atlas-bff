@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  applyTripPlanOperations,
   type PlanModificationOperation,
-} from "@/services/ai-generate.service";
+  PlanModificationService,
+} from "@/services/ai-services/ai-generate.service";
 import type { TripPlanOutput } from "@/shared/validation-schema/ai-output";
 
 const basePlan: TripPlanOutput = {
@@ -35,7 +35,10 @@ describe("applyTripPlanOperations", () => {
       },
     ];
 
-    const result = applyTripPlanOperations(basePlan, operations);
+    const result = PlanModificationService.applyTripPlanOperations(
+      basePlan,
+      operations,
+    );
 
     expect(result.days[0]?.lodging).toBe("Boutique hotel in Ginza, Tokyo");
     expect(result.days[0]?.attractions).toEqual([{ name: "Senso-ji" }]);
@@ -50,7 +53,10 @@ describe("applyTripPlanOperations", () => {
       },
     ];
 
-    const result = applyTripPlanOperations(basePlan, operations);
+    const result = PlanModificationService.applyTripPlanOperations(
+      basePlan,
+      operations,
+    );
 
     expect(result.days[0]?.attractions).toHaveLength(2);
     expect(result.days[0]?.attractions[1]?.name).toBe("Tokyo Skytree");

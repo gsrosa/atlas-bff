@@ -1,8 +1,7 @@
-import { TRPCError } from "@trpc/server";
-
-import * as authService from "@/services/auth.service";
-import { createSessionFromSupabase, deleteSession } from "@/sessions/session";
-import { clearSessionCookie, parseSessionIdFromCookie, setSessionCookie } from "@/sessions/session-cookie";
+import { createSessionFromSupabase, deleteSession } from "@/config/session/session";
+import { clearSessionCookie, parseSessionIdFromCookie, setSessionCookie } from "@/config/session/session-cookie";
+import { AuthService } from "@/services/auth.service";
+import { BadRequestError } from "@/shared/errors";
 import {
   changePasswordInputSchema,
   refreshInputSchema,
@@ -14,7 +13,7 @@ import { protectedProcedure, publicProcedure, router } from "../router.js";
 
 export const authRouter = router({
   signUp: publicProcedure.input(signUpInputSchema).mutation(async ({ ctx, input }) => {
-    const result = await authService.signUp(ctx.env, input);
+    const result = await AuthService.signUp(ctx.env, input);
     if (result.session) {
       const id = await createSessionFromSupabase(ctx.env, result.session);
       setSessionCookie(ctx.res, ctx.env, id);
@@ -24,7 +23,7 @@ export const authRouter = router({
   }),
 
   signIn: publicProcedure.input(signInInputSchema).mutation(async ({ ctx, input }) => {
-    const result = await authService.signIn(ctx.env, input);
+    const result = await AuthService.signIn(ctx.env, input);
     if (result.session) {
       const id = await createSessionFromSupabase(ctx.env, result.session);
       setSessionCookie(ctx.res, ctx.env, id);
@@ -44,7 +43,7 @@ export const authRouter = router({
   }),
 
   refresh: publicProcedure.input(refreshInputSchema).mutation(async ({ ctx, input }) => {
-    return authService.refreshSession(ctx.env, input);
+    return AuthService.refreshSession(ctx.env, input);
   }),
 
   changePassword: protectedProcedure
@@ -52,8 +51,8 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }) => {
       const email = ctx.user!.email;
       if (!email) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "User email missing; cannot verify password" });
+        throw new BadRequestError("User email missing; cannot verify password");
       }
-      return authService.changePassword(ctx.env, ctx.accessToken!, email, input);
+      return AuthService.changePassword(ctx.env, ctx.accessToken!, email, input);
     }),
 });

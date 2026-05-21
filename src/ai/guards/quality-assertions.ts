@@ -1,17 +1,10 @@
+import { AiQualityError } from "@/shared/errors";
 import type { TripPlanOutput } from "@/shared/validation-schema/ai-output";
+
+export type { AiQualityError };
 
 export interface TripPlanQualityOptions {
   expectedDays?: number | null;
-}
-
-export class AiQualityError extends Error {
-  readonly issues: string[];
-
-  constructor(issues: string[]) {
-    super(`Trip plan failed quality checks: ${issues.join("; ")}`);
-    this.name = "AiQualityError";
-    this.issues = issues;
-  }
 }
 
 const GENERIC_LODGING_VALUES = new Set([

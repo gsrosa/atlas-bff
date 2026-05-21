@@ -24,20 +24,26 @@ export function setSessionCookie(
   sessionId: string,
 ): void {
   const maxAgeMs = 60 * 60 * 24 * 7 * 1000;
+  const isProd = env.NODE_ENV === "production";
   res.cookie(getSessionCookieName(env), sessionId, {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    // SameSite=None is required when shell and BFF are on different eTLD+1
+    // (e.g. nexploring.com → nexploring-bff.vercel.app).
+    // SameSite=None requires Secure=true, which is always set in production.
+    // In dev we keep Lax because localhost is same-site and Secure is false.
+    sameSite: isProd ? "none" : "lax",
     path: "/",
     maxAge: maxAgeMs,
   });
 }
 
 export function clearSessionCookie(res: Response, env: Env): void {
+  const isProd = env.NODE_ENV === "production";
   res.cookie(getSessionCookieName(env), "", {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
     maxAge: 0,
   });

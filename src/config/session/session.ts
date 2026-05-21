@@ -5,7 +5,7 @@ import type { Env } from "@/env";
 import { getRedis } from "@/lib/redis";
 import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
 
-const SESSION_PREFIX = "atlas:sess:";
+const SESSION_PREFIX = "nexploring:sess:";
 const SESSION_TTL_SEC = 60 * 60 * 24 * 7; // 7 days, refreshed on each request
 
 export type StoredSessionPayload = {
@@ -39,10 +39,6 @@ export async function deleteSession(
   await getRedis(env).del(`${SESSION_PREFIX}${sessionId}`);
 }
 
-/**
- * Resolve access token + user for a session cookie. Refreshes Supabase tokens when
- * access JWT is invalid/expired and updates Redis.
- */
 export async function resolveSession(
   env: Env,
   sessionId: string,
