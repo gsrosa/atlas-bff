@@ -5,6 +5,7 @@ import {
   stepCountIs,
   streamText,
 } from "ai";
+import { createHash } from "node:crypto";
 import { z, type ZodSchema } from "zod";
 
 import { buildAiModel, NO_THINKING } from "@/ai/client";
@@ -33,6 +34,7 @@ import {
   deriveDayCountFromAnswers,
   deriveDayCountFromHotels,
 } from "@/lib/credit-utils";
+import { getRedis } from "@/lib/redis";
 import { getTravelerPreferences } from "@/services/traveler-profile.service";
 import { buildAIContextBlock } from "@/services/traveler-profile-ai-context";
 import {
@@ -294,6 +296,69 @@ function buildAiAnswerSummary(
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
+const PLAN_CACHE_PREFIX = "atlas:plan:";
+const PLAN_CACHE_TTL_SECONDS = 60 * 60 * 24;
+
+export function buildPlanCacheKey(input: unknown): string {
+  return createHash("sha256").update(stableStringify(input)).digest("hex");
+}
+
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+async function getCachedTripPlan(
+  env: Env,
+  cacheKey: string,
+): Promise<TripPlanOutput | null> {
+  try {
+    const raw = await getRedis(env).get(`${PLAN_CACHE_PREFIX}${cacheKey}`);
+    if (!raw) return null;
+    return tripPlanOutputSchema.parse(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+async function setCachedTripPlan(
+  env: Env,
+  cacheKey: string,
+  plan: TripPlanOutput,
+): Promise<void> {
+  try {
+    await getRedis(env).setex(
+      `${PLAN_CACHE_PREFIX}${cacheKey}`,
+      PLAN_CACHE_TTL_SECONDS,
+      JSON.stringify(plan),
+    );
+  } catch {
+    // Cache failure must not fail trip generation.
+  }
+}
+
+function buildTripPlanCacheKeyInput(
+  answers: AnswerMap,
+  aiQuestions: AiQuestionInput[],
+  aiAnswers: AnswerMap,
+  tripDetails?: TripDetails,
+) {
+  return {
+    answers,
+    aiQuestions,
+    aiAnswers,
+    tripDetails: tripDetails ?? null,
+  };
+}
+
 async function buildTripPlanPrompt(
   env: Env,
   answers: AnswerMap,
@@ -429,6 +494,12 @@ export const generateTripPlanFromAnswers = async (
   opts?: { accessToken?: string; userId?: string },
   tripDetails?: TripDetails,
 ): Promise<TripPlanOutput> => {
+  const cacheKey = buildPlanCacheKey(
+    buildTripPlanCacheKeyInput(answers, aiQuestions, aiAnswers, tripDetails),
+  );
+  const cached = await getCachedTripPlan(env, cacheKey);
+  if (cached) return cached;
+
   const { systemPrompt, userPrompt, effectiveDays } = await buildTripPlanPrompt(
     env,
     answers,
@@ -438,7 +509,7 @@ export const generateTripPlanFromAnswers = async (
     tripDetails,
   );
 
-  return generateTripPlanWithQuality({
+  const result = await generateTripPlanWithQuality({
     env,
     endpoint: "trip",
     promptVersion: TRIP_PLAN_PROMPT_VERSION,
@@ -449,6 +520,8 @@ export const generateTripPlanFromAnswers = async (
     temperature: 0.7,
     expectedDays: effectiveDays,
   });
+  await setCachedTripPlan(env, cacheKey, result);
+  return result;
 };
 
 export const streamTripPlanFromAnswers = async (
@@ -459,6 +532,24 @@ export const streamTripPlanFromAnswers = async (
   opts?: { accessToken?: string; userId?: string },
   tripDetails?: TripDetails,
 ) => {
+  const cacheKey = buildPlanCacheKey(
+    buildTripPlanCacheKeyInput(answers, aiQuestions, aiAnswers, tripDetails),
+  );
+  const cached = await getCachedTripPlan(env, cacheKey);
+  if (cached) {
+    return {
+      result: {
+        partialObjectStream: (async function* () {
+          yield cached;
+        })(),
+        object: Promise.resolve(cached),
+      },
+      expectedDays:
+        deriveDayCountFromHotels(tripDetails?.hotels ?? []) ??
+        deriveDayCountFromAnswers(answers),
+    };
+  }
+
   const { systemPrompt, userPrompt, effectiveDays } = await buildTripPlanPrompt(
     env,
     answers,
@@ -504,7 +595,10 @@ export const streamTripPlanFromAnswers = async (
   return {
     result: {
       partialObjectStream: result.partialOutputStream,
-      object: result.output,
+      object: Promise.resolve(result.output).then(async (plan) => {
+        await setCachedTripPlan(env, cacheKey, plan);
+        return plan;
+      }),
     },
     expectedDays: effectiveDays,
   };
