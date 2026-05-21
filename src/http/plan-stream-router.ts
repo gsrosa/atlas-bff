@@ -5,6 +5,7 @@ import {
   sanitizeUserRequest,
   UserRequestValidationError,
 } from "@/ai/guards/input-sanitizer";
+import { assertTripPlanQuality } from "@/ai/guards/quality-assertions";
 import type { Env } from "@/env";
 import {
   creditCostForDays,
@@ -19,7 +20,7 @@ import {
   editTripPlan,
   enrichHotelInfo,
   generateChecklistFromAnswers,
-  generateTripPlanFromAnswers,
+  streamTripPlanFromAnswers,
 } from "@/services/ai-generate.service";
 import * as creditsService from "@/services/credits.service";
 import { streamGeminiText } from "@/services/gemini-stream.service";
@@ -150,7 +151,7 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
     }
 
     try {
-      const result = await generateTripPlanFromAnswers(
+      const { result, expectedDays } = await streamTripPlanFromAnswers(
         env,
         answers,
         aiQuestions,
@@ -159,9 +160,22 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
         tripDetails,
       );
 
-      // Trim to max days (safety net if AI ignores the cap)
-      if (result.days.length > PLAN_MAX_DAYS) {
-        result.days = result.days.slice(0, PLAN_MAX_DAYS);
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.flushHeaders();
+
+      for await (const partial of result.partialObjectStream) {
+        res.write(
+          `data: ${JSON.stringify({ type: "partial", object: partial })}\n\n`,
+        );
+      }
+
+      const finalObject = await result.object;
+      assertTripPlanQuality(finalObject, { expectedDays });
+
+      if (finalObject.days.length > PLAN_MAX_DAYS) {
+        finalObject.days = finalObject.days.slice(0, PLAN_MAX_DAYS);
       }
 
       if (userId && accessToken) {
@@ -173,13 +187,18 @@ export const createPlanStreamRouter = (env: Env): ExpressRouter => {
         });
       }
 
-      res.json(result);
+      res.write(
+        `data: ${JSON.stringify({ type: "done", object: finalObject })}\n\n`,
+      );
+      res.end();
     } catch (err) {
-      res
-        .status(500)
-        .json({
-          error: err instanceof Error ? err.message : "Generation failed",
-        });
+      const message = err instanceof Error ? err.message : "Generation failed";
+      if (!res.headersSent) {
+        res.status(500).json({ error: message });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: "error", message })}\n\n`);
+        res.end();
+      }
     }
   });
 

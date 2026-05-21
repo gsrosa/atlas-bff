@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateObject, streamObject } from "ai";
 import type { ZodSchema } from "zod";
 
 import { buildAiModel, NO_THINKING } from "@/ai/client";
@@ -283,6 +283,50 @@ function buildAiAnswerSummary(
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
+async function buildTripPlanPrompt(
+  env: Env,
+  answers: AnswerMap,
+  aiQuestions: AiQuestionInput[],
+  aiAnswers: AnswerMap,
+  opts?: { accessToken?: string; userId?: string },
+  tripDetails?: TripDetails,
+): Promise<{ userPrompt: string; effectiveDays: number | null }> {
+  const aiSummary = buildAiAnswerSummary(aiQuestions, aiAnswers);
+  const baseSummary = buildAnswerSummary(answers, tripDetails);
+  const tripCore =
+    `BASE PREFERENCES:\n${baseSummary}\n\n` +
+    `PERSONALISED DETAILS (from follow-up):\n${aiSummary || "None provided"}`;
+
+  let mergedContext = tripCore;
+  if (opts?.accessToken && opts?.userId) {
+    try {
+      const { preferences } = await getTravelerPreferences(
+        env,
+        opts.accessToken,
+        opts.userId,
+      );
+      mergedContext = buildAIContextBlock(preferences, tripCore);
+    } catch {
+      mergedContext = tripCore;
+    }
+  }
+
+  const hotelDays = tripDetails?.hotels
+    ? deriveDayCountFromHotels(tripDetails.hotels)
+    : null;
+  const effectiveDays = hotelDays ?? deriveDayCountFromAnswers(answers);
+  const dayInstruction = effectiveDays
+    ? `\nGenerate EXACTLY ${effectiveDays} days — the "days" array must have exactly ${effectiveDays} objects.`
+    : "";
+
+  const userPrompt =
+    `Create a complete trip plan for the following traveller:\n\n` +
+    `${mergedContext}\n\n` +
+    `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
+
+  return { userPrompt, effectiveDays };
+}
+
 export const generateChecklistFromAnswers = async (
   env: Env,
   answers: AnswerMap,
@@ -334,38 +378,14 @@ export const generateTripPlanFromAnswers = async (
   opts?: { accessToken?: string; userId?: string },
   tripDetails?: TripDetails,
 ): Promise<TripPlanOutput> => {
-  const aiSummary = buildAiAnswerSummary(aiQuestions, aiAnswers);
-  const baseSummary = buildAnswerSummary(answers, tripDetails);
-  const tripCore =
-    `BASE PREFERENCES:\n${baseSummary}\n\n` +
-    `PERSONALISED DETAILS (from follow-up):\n${aiSummary || "None provided"}`;
-
-  let mergedContext = tripCore;
-  if (opts?.accessToken && opts?.userId) {
-    try {
-      const { preferences } = await getTravelerPreferences(
-        env,
-        opts.accessToken,
-        opts.userId,
-      );
-      mergedContext = buildAIContextBlock(preferences, tripCore);
-    } catch {
-      mergedContext = tripCore;
-    }
-  }
-
-  const hotelDays = tripDetails?.hotels
-    ? deriveDayCountFromHotels(tripDetails.hotels)
-    : null;
-  const effectiveDays = hotelDays ?? deriveDayCountFromAnswers(answers);
-  const dayInstruction = effectiveDays
-    ? `\nGenerate EXACTLY ${effectiveDays} days — the "days" array must have exactly ${effectiveDays} objects.`
-    : "";
-
-  const userPrompt =
-    `Create a complete trip plan for the following traveller:\n\n` +
-    `${mergedContext}\n\n` +
-    `Use all of the above to select the best destination and build the full day-by-day plan.${dayInstruction}`;
+  const { userPrompt, effectiveDays } = await buildTripPlanPrompt(
+    env,
+    answers,
+    aiQuestions,
+    aiAnswers,
+    opts,
+    tripDetails,
+  );
 
   return generateTripPlanWithQuality({
     env,
@@ -378,6 +398,73 @@ export const generateTripPlanFromAnswers = async (
     temperature: 0.7,
     expectedDays: effectiveDays,
   });
+};
+
+export const streamTripPlanFromAnswers = async (
+  env: Env,
+  answers: AnswerMap,
+  aiQuestions: AiQuestionInput[],
+  aiAnswers: AnswerMap,
+  opts?: { accessToken?: string; userId?: string },
+  tripDetails?: TripDetails,
+) => {
+  const { userPrompt, effectiveDays } = await buildTripPlanPrompt(
+    env,
+    answers,
+    aiQuestions,
+    aiAnswers,
+    opts,
+    tripDetails,
+  );
+  const start = Date.now();
+  const correlationId = crypto.randomUUID();
+
+  const result = streamObject({
+    model: buildAiModel(env),
+    providerOptions: NO_THINKING,
+    schema: tripPlanOutputSchema,
+    system: TRIP_PLAN_SYSTEM_PROMPT,
+    prompt: userPrompt,
+    maxOutputTokens: 32768,
+    temperature: 0.7,
+    onFinish: ({ object, usage, error }) => {
+      let qualityError: AiQualityError | null = null;
+      if (object === undefined) {
+        qualityError = new AiQualityError([
+          "stream finished without a valid object",
+        ]);
+      } else {
+        try {
+          assertTripPlanQuality(object, { expectedDays: effectiveDays });
+        } catch (err) {
+          if (err instanceof AiQualityError) {
+            qualityError = err;
+          }
+        }
+      }
+      const errorCode = error
+        ? error instanceof Error
+          ? error.message.slice(0, 120)
+          : "stream validation failed"
+        : qualityError?.message.slice(0, 120);
+
+      logAiCall({
+        correlationId,
+        endpoint: "trip",
+        promptVersion: TRIP_PLAN_PROMPT_VERSION,
+        model: env.GEMINI_MODEL,
+        userId: opts?.userId,
+        inputTokens: usage.inputTokens ?? 0,
+        outputTokens: usage.outputTokens ?? 0,
+        latencyMs: Date.now() - start,
+        success: !error && !qualityError,
+        zodValid: !error && object !== undefined,
+        errorCode,
+      });
+    },
+  });
+
+  return { result, expectedDays: effectiveDays };
 };
 
 // ─── Edit (server-side prompt only) ──────────────────────────────────────────
