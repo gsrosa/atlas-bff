@@ -26,6 +26,11 @@ const envSchema = z.object({
     (v) => (v === "" || v === undefined ? undefined : v),
     z.string().min(1).optional(),
   ),
+  /** Optional Google Directions API key for real travel-time estimates. */
+  GOOGLE_DIRECTIONS_API_KEY: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v),
+    z.string().min(1).optional(),
+  ),
   CREDITS_TRIP_PLAN_COST: z.coerce.number().int().min(0).default(0),
   CREDITS_ALLOW_SELF_TOPUP: z.preprocess(
     (val) => val === true || val === "true" || val === "1",
