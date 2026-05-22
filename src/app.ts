@@ -5,12 +5,10 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 
 import type { Env } from "@/env";
+import { RATE_LIMIT_TRPC_PER_MIN, RATE_LIMIT_WINDOW_MS } from "@/shared/constants";
 import { createContextFactory } from "@/trpc/context";
 import { trpcOnError } from "@/trpc/error-handler";
-import { requireBearerAuth } from "@/trpc/middlewares/require-bearer-auth.middleware";
 import { appRouter } from "@/trpc/routes/_app";
-import { createMeRouter } from "@/trpc/routes/http/me-router";
-import { createPlanStreamRouter } from "@/trpc/routes/http/plan-stream-router";
 
 const normalizeOrigin = (origin: string): string => {
   try {
@@ -78,34 +76,16 @@ export const createApp = (env: Env): Express => {
   app.use(express.json({ limit: "2mb" }));
 
   const trpcLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    limit: 120,
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    limit: RATE_LIMIT_TRPC_PER_MIN,
     standardHeaders: "draft-7",
     legacyHeaders: false,
     message: { error: "Too many requests, slow down." },
   });
 
-  const plansAiLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    limit: 10,
-    keyGenerator: (req) => req.nexploringUser?.id ?? req.ip ?? "unknown",
-    standardHeaders: "draft-7",
-    legacyHeaders: false,
-    message: { error: "AI_RATE_LIMIT" },
-  });
-
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });
-
-  app.use(createMeRouter(env));
-
-  app.use(
-    "/plans",
-    requireBearerAuth(env),
-    plansAiLimiter,
-    createPlanStreamRouter(env),
-  );
 
   app.use(
     "/trpc",

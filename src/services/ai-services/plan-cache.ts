@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { Env } from "@/env";
 import { getRedis } from "@/lib/redis";
+import { PLAN_CACHE_PREFIX, PLAN_CACHE_TTL_SECONDS } from "@/shared/constants";
 import {
   type TripPlanOutput,
   tripPlanOutputSchema,
@@ -11,9 +12,6 @@ import type {
   AnswerMap,
   TripDetails,
 } from "@/shared/validation-schema/planner-input";
-
-const PLAN_CACHE_PREFIX = "nexploring:plan:";
-const PLAN_CACHE_TTL_SECONDS = 60 * 60 * 24;
 
 export const buildPlanCacheKey = (input: unknown): string => {
   return createHash("sha256").update(stableStringify(input)).digest("hex");

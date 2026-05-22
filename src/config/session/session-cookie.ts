@@ -2,6 +2,7 @@ import { parse } from "cookie";
 import type { Response } from "express";
 
 import type { Env } from "@/env";
+import { SESSION_TTL_SECONDS } from "@/shared/constants";
 
 export function getSessionCookieName(env: Env): string {
   return env.SESSION_COOKIE_NAME;
@@ -23,7 +24,7 @@ export function setSessionCookie(
   env: Env,
   sessionId: string,
 ): void {
-  const maxAgeMs = 60 * 60 * 24 * 7 * 1000;
+  const maxAgeMs = SESSION_TTL_SECONDS * 1000;
   const isProd = env.NODE_ENV === "production";
   res.cookie(getSessionCookieName(env), sessionId, {
     httpOnly: true,

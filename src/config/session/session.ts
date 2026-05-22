@@ -4,9 +4,7 @@ import { randomBytes } from "node:crypto";
 import type { Env } from "@/env";
 import { getRedis } from "@/lib/redis";
 import { createServiceClient, getUserFromAccessToken } from "@/lib/supabase";
-
-const SESSION_PREFIX = "nexploring:sess:";
-const SESSION_TTL_SEC = 60 * 60 * 24 * 7; // 7 days, refreshed on each request
+import { SESSION_PREFIX, SESSION_TTL_SECONDS } from "@/shared/constants";
 
 export type StoredSessionPayload = {
   access_token: string;
@@ -26,7 +24,7 @@ export async function createSessionFromSupabase(
   };
   await getRedis(env).setex(
     `${SESSION_PREFIX}${id}`,
-    SESSION_TTL_SEC,
+    SESSION_TTL_SECONDS,
     JSON.stringify(payload),
   );
   return id;
@@ -74,7 +72,7 @@ export async function resolveSession(
     };
     await getRedis(env).setex(
       `${SESSION_PREFIX}${sessionId}`,
-      SESSION_TTL_SEC,
+      SESSION_TTL_SECONDS,
       JSON.stringify(next),
     );
     return { accessToken: data.session.access_token, user: data.user };
@@ -84,7 +82,7 @@ export async function resolveSession(
   if (r.user && !r.error) {
     await getRedis(env).expire(
       `${SESSION_PREFIX}${sessionId}`,
-      SESSION_TTL_SEC,
+      SESSION_TTL_SECONDS,
     );
     return { accessToken: payload.access_token, user: r.user };
   }

@@ -14,15 +14,6 @@ describe("HTTP API (unauthenticated)", () => {
     expect(res.body).toEqual({ ok: true });
   });
 
-  it("GET /me without auth returns 401", async () => {
-    const res = await request(app).get("/me").expect(401);
-    expect(res.body).toMatchObject({ error: expect.any(String) });
-  });
-
-  it("POST /plans/stream without auth returns 401", async () => {
-    await request(app).post("/plans/stream").send({}).expect(401);
-  });
-
   it("GET /trpc/users.me without auth returns 401", async () => {
     await request(app).get(`/trpc/users.me?input=${voidInputEncoded}`).expect(401);
   });

@@ -1,6 +1,7 @@
 import { initTRPC,TRPCError } from "@trpc/server";
 import superjson from "superjson";
 
+import { AI_RATE_LIMIT_PER_MIN, RATE_LIMIT_WINDOW_MS } from "@/shared/constants";
 import {
   BadRequestError,
   ConflictError,
@@ -47,8 +48,29 @@ const domainErrorMiddleware = t.middleware(async ({ next }) => {
   }
 });
 
+const aiRateLimits = new Map<string, number[]>();
+
+const aiRateLimitMiddleware = t.middleware(({ ctx, next }) => {
+  const userId = ctx.user?.id;
+  if (!userId) return next();
+  const now = Date.now();
+  const hits = (aiRateLimits.get(userId) ?? []).filter(
+    (ts) => now - ts < RATE_LIMIT_WINDOW_MS,
+  );
+  if (hits.length >= AI_RATE_LIMIT_PER_MIN) {
+    throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "AI_RATE_LIMIT" });
+  }
+  hits.push(now);
+  aiRateLimits.set(userId, hits);
+  return next();
+});
+
 export const router = t.router;
 export const middleware = t.middleware;
 
 export const publicProcedure = t.procedure.use(domainErrorMiddleware);
 export const protectedProcedure = t.procedure.use(domainErrorMiddleware).use(authMiddleware);
+export const protectedAiProcedure = t.procedure
+  .use(domainErrorMiddleware)
+  .use(authMiddleware)
+  .use(aiRateLimitMiddleware);
