@@ -1,13 +1,14 @@
+import express from "express";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
-import { createApp } from "@/app";
+import { createApp } from "@/create-app";
 
 import { buildTestEnv } from "./helpers/test-env";
 import { plansListInputEncoded, voidInputEncoded } from "./helpers/trpc-inputs";
 
 describe("HTTP API (unauthenticated)", () => {
-  const app = createApp(buildTestEnv());
+  const app = createApp(express(), buildTestEnv());
 
   it("GET /health returns ok", async () => {
     const res = await request(app).get("/health").expect(200);

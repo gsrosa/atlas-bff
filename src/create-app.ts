@@ -56,8 +56,9 @@ const createCorsOriginValidator = (allowedOrigins: string[]) => {
   };
 };
 
-export const createApp = (env: Env): Express => {
-  const app = express();
+export const createApp = (appOrEnv: Express | Env, envOrUndefined?: Env): Express => {
+  const app: Express = envOrUndefined !== undefined ? (appOrEnv as Express) : express();
+  const env: Env = envOrUndefined !== undefined ? envOrUndefined : (appOrEnv as Env);
 
   app.disable("x-powered-by");
   app.set("trust proxy", 1);

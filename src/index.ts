@@ -1,4 +1,6 @@
-import { createApp } from "@/app";
+import express from "express";
+
+import { createApp } from "@/create-app";
 import { loadEnv } from "@/env/index.js";
 
 import "./load-env.js";
@@ -10,7 +12,7 @@ export type {
 } from "@/trpc/routes/_app";
 
 const env = loadEnv();
-const app = createApp(env);
+const app = createApp(express(), env);
 
 const isVercel = process.env.VERCEL === "1";
 
