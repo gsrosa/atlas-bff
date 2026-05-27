@@ -4,6 +4,8 @@ import { adaptSlotsForCompatibility } from "@/services/itinerary/slot-adapter";
 import { buildDayMapRoutes } from "@/services/maps/day-map-builder";
 import { GooglePlacesClient } from "@/services/places/google-places.client";
 import { resolveMealSlots } from "@/services/places/place-resolver";
+import { enrichDayRoutes } from "@/services/routes/day-route-enricher";
+import { GoogleRoutesClient } from "@/services/routes/google-routes.client";
 import { type TripPlanOutput } from "@/shared/validation-schema/ai-output";
 import type {
   AiQuestionInput,
@@ -66,7 +68,10 @@ export class TripGenerationService {
     const withMeals = await resolveMealSlots(generated, {
       placesClient: new GooglePlacesClient(env),
     });
-    const result = buildDayMapRoutes(withMeals);
+    const withRoutes = await enrichDayRoutes(withMeals, {
+      routesClient: new GoogleRoutesClient(env),
+    });
+    const result = buildDayMapRoutes(withRoutes);
     await setCachedTripPlan(env, cacheKey, result);
     return result;
   }
