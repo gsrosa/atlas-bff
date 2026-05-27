@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { resolveMealSlots } from "@/services/places/place-resolver";
+import {
+  resolveMealSlots,
+  resolvePlaceSlots,
+} from "@/services/places/place-resolver";
 import type { TripPlanOutput } from "@/shared/validation-schema/ai-output";
 
 const plan: TripPlanOutput = {
@@ -91,5 +94,52 @@ describe("resolveMealSlots", () => {
 
     expect(resolved.days[0]?.slots?.[1]?.resolvedPlace).toBeUndefined();
     expect(resolved.days[0]?.meals?.[0]?.name).toBe("Lunch near Ueno");
+  });
+});
+
+describe("resolvePlaceSlots", () => {
+  it("patches attraction slots with selected Google Places candidates", async () => {
+    const searchText = vi.fn().mockResolvedValue([
+      {
+        placeId: "sensoji",
+        name: "Senso-ji",
+        address: "2 Chome-3-1 Asakusa, Tokyo",
+        rating: 4.5,
+        userRatingsTotal: 90000,
+      },
+    ]);
+    const resolved = await resolvePlaceSlots(
+      {
+        ...plan,
+        days: [
+          {
+            ...plan.days[0]!,
+            slots: [
+              {
+                id: "sensoji",
+                dayNumber: 1,
+                startTime: "09:00",
+                kind: "attraction",
+                title: "Visit Senso-ji",
+                city: "Tokyo",
+                resolve: {
+                  kind: "attraction",
+                  priority: "nice_to_have",
+                  query: "Senso-ji Tokyo",
+                  city: "Tokyo",
+                  allowUnresolved: true,
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        placesClient: { searchText },
+      },
+    );
+
+    expect(resolved.days[0]?.slots?.[0]?.resolvedPlace?.placeId).toBe("sensoji");
+    expect(resolved.days[0]?.attractions[0]?.name).toBe("Senso-ji");
   });
 });

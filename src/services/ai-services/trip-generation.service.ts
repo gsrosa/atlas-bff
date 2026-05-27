@@ -4,7 +4,7 @@ import { adaptSlotsForCompatibility } from "@/services/itinerary/slot-adapter";
 import { normalizeTripAdvice } from "@/services/itinerary/trip-advice";
 import { buildDayMapRoutes } from "@/services/maps/day-map-builder";
 import { GooglePlacesClient } from "@/services/places/google-places.client";
-import { resolveMealSlots } from "@/services/places/place-resolver";
+import { resolvePlaceSlots } from "@/services/places/place-resolver";
 import { enrichDayRoutes } from "@/services/routes/day-route-enricher";
 import { GoogleRoutesClient } from "@/services/routes/google-routes.client";
 import { type TripPlanOutput } from "@/shared/validation-schema/ai-output";
@@ -66,7 +66,7 @@ export class TripGenerationService {
         expectedDays: effectiveDays,
       }),
     );
-    const withMeals = await resolveMealSlots(generated, {
+    const withMeals = await resolvePlaceSlots(generated, {
       placesClient: new GooglePlacesClient(env),
     });
     const withRoutes = await enrichDayRoutes(withMeals, {

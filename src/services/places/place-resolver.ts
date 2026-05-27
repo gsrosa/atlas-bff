@@ -12,15 +12,17 @@ import {
 import { markCandidateUsed, selectBestPlaceCandidate } from "./place-ranking";
 
 const MAX_MEAL_RESOLVE_REQUESTS = 30;
+const MAX_ATTRACTION_RESOLVE_REQUESTS = 30;
 
-export type MealResolverContext = {
+export type PlaceResolverContext = {
   placesClient: Pick<GooglePlacesClient, "searchText">;
   maxMealRequests?: number;
+  maxAttractionRequests?: number;
 };
 
-export const resolveMealSlots = async (
+export const resolvePlaceSlots = async (
   plan: TripPlanOutput,
-  context: MealResolverContext,
+  context: PlaceResolverContext,
 ): Promise<TripPlanOutput> => {
   const usedPlaceIds = new Set<string>();
   const usedNames = new Set<string>();
@@ -35,11 +37,11 @@ export const resolveMealSlots = async (
 
     const slots: ItinerarySlot[] = [];
     for (const slot of day.slots) {
-      if (!shouldResolveMealSlot(slot)) {
+      if (!shouldResolveSlot(slot)) {
         slots.push(slot);
         continue;
       }
-      if (requestCount >= (context.maxMealRequests ?? MAX_MEAL_RESOLVE_REQUESTS)) {
+      if (requestCount >= getRequestCap(slot, context)) {
         slots.push(slot);
         continue;
       }
@@ -47,7 +49,7 @@ export const resolveMealSlots = async (
       requestCount += 1;
       const anchor = findAnchor(day.slots, slot);
       const candidates = await context.placesClient.searchText(
-        buildMealQuery(slot),
+        buildResolveQuery(slot),
         {
           city: slot.resolve?.city ?? slot.city,
           country: slot.resolve?.country ?? slot.country,
@@ -92,12 +94,25 @@ export const resolveMealSlots = async (
   });
 };
 
-const shouldResolveMealSlot = (slot: ItinerarySlot): boolean =>
-  slot.kind === "meal" &&
-  slot.resolve?.kind === "restaurant" &&
-  !slot.resolvedPlace;
+export const resolveMealSlots = resolvePlaceSlots;
 
-const buildMealQuery = (slot: ItinerarySlot): string => {
+const shouldResolveSlot = (slot: ItinerarySlot): boolean =>
+  !slot.resolvedPlace &&
+  Boolean(slot.resolve) &&
+  (slot.resolve?.kind === "restaurant" ||
+    slot.resolve?.kind === "attraction" ||
+    slot.resolve?.kind === "activity_provider" ||
+    slot.resolve?.kind === "lodging");
+
+const getRequestCap = (
+  slot: ItinerarySlot,
+  context: PlaceResolverContext,
+): number =>
+  slot.resolve?.kind === "restaurant"
+    ? (context.maxMealRequests ?? MAX_MEAL_RESOLVE_REQUESTS)
+    : (context.maxAttractionRequests ?? MAX_ATTRACTION_RESOLVE_REQUESTS);
+
+const buildResolveQuery = (slot: ItinerarySlot): string => {
   const resolve = slot.resolve;
   const hints = resolve?.cuisineHints?.join(" ") ?? "";
   return [
