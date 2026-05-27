@@ -1,5 +1,6 @@
 import { TRIP_PLAN_PROMPT_VERSION } from "@/ai/prompts";
 import type { Env } from "@/env";
+import { adaptSlotsForCompatibility } from "@/services/itinerary/slot-adapter";
 import { type TripPlanOutput } from "@/shared/validation-schema/ai-output";
 import type {
   AiQuestionInput,
@@ -46,7 +47,7 @@ export class TripGenerationService {
         opts,
         tripDetails,
       );
-    const result = await generateTripPlanWithQuality({
+    const result = adaptSlotsForCompatibility(await generateTripPlanWithQuality({
       env,
       endpoint: "trip",
       promptVersion: TRIP_PLAN_PROMPT_VERSION,
@@ -56,7 +57,7 @@ export class TripGenerationService {
       maxOutputTokens: 32768,
       temperature: 0.7,
       expectedDays: effectiveDays,
-    });
+    }));
     await setCachedTripPlan(env, cacheKey, result);
     return result;
   }
