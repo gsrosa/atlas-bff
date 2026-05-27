@@ -69,6 +69,7 @@ export class PlanModificationService {
       currentPlan,
       operations,
     );
+    assertImmutableDestination(currentPlan, result);
     assertTripPlanQuality(result, { expectedDays: currentPlan.days.length });
     return result;
   }
@@ -79,7 +80,34 @@ export class PlanModificationService {
   ): TripPlanOutput {
     const next = structuredClone(plan);
     for (const operation of operations) applyOperation(next, operation);
-    return tripPlanOutputSchema.parse(next);
+    const parsed = tripPlanOutputSchema.parse(next);
+    assertImmutableDestination(plan, parsed);
+    return parsed;
+  }
+}
+
+function assertImmutableDestination(
+  before: TripPlanOutput,
+  after: TripPlanOutput,
+): void {
+  if (
+    before.destination !== after.destination ||
+    before.country !== after.country
+  ) {
+    throw new Error("Modification rejected: destination is immutable");
+  }
+
+  for (const previousDay of before.days) {
+    const nextDay = after.days.find(
+      (day) => day.dayNumber === previousDay.dayNumber,
+    );
+    if (!nextDay) continue;
+    if (previousDay.city !== nextDay.city) {
+      throw new Error("Modification rejected: day city is immutable");
+    }
+    if ((previousDay.country ?? "") !== (nextDay.country ?? "")) {
+      throw new Error("Modification rejected: day country is immutable");
+    }
   }
 }
 

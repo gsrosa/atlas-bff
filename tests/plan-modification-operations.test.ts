@@ -61,4 +61,21 @@ describe("applyTripPlanOperations", () => {
     expect(result.days[0]?.attractions).toHaveLength(2);
     expect(result.days[0]?.attractions[1]?.name).toBe("Tokyo Skytree");
   });
+
+  it("rejects edits that change an existing day city", () => {
+    expect(() =>
+      PlanModificationService.applyTripPlanOperations(basePlan, [
+        {
+          type: "replaceDay",
+          dayNumber: 1,
+          day: {
+            dayNumber: 1,
+            city: "Kyoto",
+            attractions: [],
+            lodging: "Hotel in Kyoto",
+          },
+        },
+      ]),
+    ).toThrow(/day city is immutable/);
+  });
 });

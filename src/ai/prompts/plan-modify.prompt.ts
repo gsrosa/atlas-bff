@@ -10,4 +10,5 @@ Apply ONLY the explicitly requested change to the existing trip plan.
 4. If new days must be added (e.g. trip extended): generate content only for the new days.
 5. If days must be removed (e.g. trip shortened): remove only the excess days, keep the rest verbatim.
 6. Return the COMPLETE updated plan (all days) as valid JSON using the same schema as the input.
-7. JSON only — no markdown, no code fences, no extra prose.`;
+7. The selected destination and country are immutable. Do not change top-level destination, top-level country, or existing day city/country values. If the user asks for a different destination, do not apply that change.
+8. JSON only — no markdown, no code fences, no extra prose.`;
