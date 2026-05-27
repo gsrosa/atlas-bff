@@ -1,6 +1,9 @@
 import { TRIP_PLAN_PROMPT_VERSION } from "@/ai/prompts";
 import type { Env } from "@/env";
 import { adaptSlotsForCompatibility } from "@/services/itinerary/slot-adapter";
+import { buildDayMapRoutes } from "@/services/maps/day-map-builder";
+import { GooglePlacesClient } from "@/services/places/google-places.client";
+import { resolveMealSlots } from "@/services/places/place-resolver";
 import { type TripPlanOutput } from "@/shared/validation-schema/ai-output";
 import type {
   AiQuestionInput,
@@ -47,17 +50,23 @@ export class TripGenerationService {
         opts,
         tripDetails,
       );
-    const result = adaptSlotsForCompatibility(await generateTripPlanWithQuality({
-      env,
-      endpoint: "trip",
-      promptVersion: TRIP_PLAN_PROMPT_VERSION,
-      userId: opts?.userId,
-      system: systemPrompt,
-      prompt: userPrompt,
-      maxOutputTokens: 32768,
-      temperature: 0.7,
-      expectedDays: effectiveDays,
-    }));
+    const generated = adaptSlotsForCompatibility(
+      await generateTripPlanWithQuality({
+        env,
+        endpoint: "trip",
+        promptVersion: TRIP_PLAN_PROMPT_VERSION,
+        userId: opts?.userId,
+        system: systemPrompt,
+        prompt: userPrompt,
+        maxOutputTokens: 32768,
+        temperature: 0.7,
+        expectedDays: effectiveDays,
+      }),
+    );
+    const withMeals = await resolveMealSlots(generated, {
+      placesClient: new GooglePlacesClient(env),
+    });
+    const result = buildDayMapRoutes(withMeals);
     await setCachedTripPlan(env, cacheKey, result);
     return result;
   }
