@@ -17,5 +17,8 @@ describe("trip plan prompt", () => {
     expect(TRIP_PLAN_SYSTEM_PROMPT).toContain(
       'Meal slots should include a restaurant "resolve" request',
     );
+    expect(TRIP_PLAN_SYSTEM_PROMPT).toContain(
+      'Always include top-level "tripAdvice"',
+    );
   });
 });

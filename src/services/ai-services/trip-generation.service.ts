@@ -1,6 +1,7 @@
 import { TRIP_PLAN_PROMPT_VERSION } from "@/ai/prompts";
 import type { Env } from "@/env";
 import { adaptSlotsForCompatibility } from "@/services/itinerary/slot-adapter";
+import { normalizeTripAdvice } from "@/services/itinerary/trip-advice";
 import { buildDayMapRoutes } from "@/services/maps/day-map-builder";
 import { GooglePlacesClient } from "@/services/places/google-places.client";
 import { resolveMealSlots } from "@/services/places/place-resolver";
@@ -71,7 +72,7 @@ export class TripGenerationService {
     const withRoutes = await enrichDayRoutes(withMeals, {
       routesClient: new GoogleRoutesClient(env),
     });
-    const result = buildDayMapRoutes(withRoutes);
+    const result = normalizeTripAdvice(buildDayMapRoutes(withRoutes));
     await setCachedTripPlan(env, cacheKey, result);
     return result;
   }

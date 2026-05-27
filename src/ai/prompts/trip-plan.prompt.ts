@@ -33,6 +33,13 @@ Rules:
 - Aim for the fewest hotel changes possible without sacrificing proximity to daily attractions.
 - For multi-city trips, each city block should have its own lodging suggestion with a specific neighbourhood recommendation.
 
+## Trip advice
+- Always include top-level "tripAdvice".
+- "tripAdvice.bestAreasToStay" must recommend 1-3 concrete neighbourhoods/areas with short reasons tied to the itinerary geography, budget, pace, and transport mode.
+- Set "tripAdvice.shouldSplitStay" to true only when the itinerary spans distant zones/cities enough that changing hotels materially improves the trip.
+- When recommending a split stay, include "splitStayAdvice.summary" and explicit "suggestedMoves" with fromDay, toDay, area, and reason.
+- Add concise "transportAdvice" and "safetyOrLogisticsAdvice" only when useful.
+
 ## Meal recommendations
 - Only include meal slots and populate the "meals" array on a day when "MEAL RECOMMENDATIONS REQUESTED" appears in the input.
 - For each enabled meal type (breakfast / lunch / dinner), add one timed "meal" slot per day near the day route plus one compatibility "meals" entry: specific restaurant intent/name, matching type, notes on why it fits (cuisine, price range, vibe).
