@@ -31,6 +31,403 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
         country: z.ZodOptional<z.ZodString>;
         region: z.ZodOptional<z.ZodString>;
         summary: z.ZodOptional<z.ZodString>;
+        slots: z.ZodOptional<z.ZodArray<z.ZodObject<{
+            id: z.ZodString;
+            dayNumber: z.ZodNumber;
+            startTime: z.ZodString;
+            endTime: z.ZodOptional<z.ZodString>;
+            durationMinutes: z.ZodOptional<z.ZodNumber>;
+            kind: z.ZodEnum<["attraction", "meal", "transport", "activity", "lodging", "free_time"]>;
+            title: z.ZodString;
+            notes: z.ZodOptional<z.ZodString>;
+            area: z.ZodOptional<z.ZodString>;
+            city: z.ZodString;
+            country: z.ZodOptional<z.ZodString>;
+            estimatedPrice: z.ZodOptional<z.ZodObject<{
+                amount: z.ZodOptional<z.ZodNumber>;
+                min: z.ZodOptional<z.ZodNumber>;
+                max: z.ZodOptional<z.ZodNumber>;
+                currency: z.ZodString;
+                label: z.ZodOptional<z.ZodString>;
+            }, "strip", z.ZodTypeAny, {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            }, {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            }>>;
+            resolve: z.ZodOptional<z.ZodObject<{
+                kind: z.ZodEnum<["restaurant", "attraction", "lodging", "activity_provider"]>;
+                priority: z.ZodEnum<["required", "nice_to_have"]>;
+                query: z.ZodString;
+                slot: z.ZodOptional<z.ZodEnum<["breakfast", "lunch", "dinner", "snack"]>>;
+                city: z.ZodString;
+                country: z.ZodOptional<z.ZodString>;
+                area: z.ZodOptional<z.ZodString>;
+                nearSlotId: z.ZodOptional<z.ZodString>;
+                nearText: z.ZodOptional<z.ZodString>;
+                cuisineHints: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+                budgetHint: z.ZodOptional<z.ZodEnum<["budget", "moderate", "comfort", "luxury"]>>;
+                allowUnresolved: z.ZodBoolean;
+            }, "strip", z.ZodTypeAny, {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            }, {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            }>>;
+            resolvedPlace: z.ZodOptional<z.ZodObject<{
+                source: z.ZodLiteral<"google_places">;
+                placeId: z.ZodString;
+                name: z.ZodString;
+                address: z.ZodOptional<z.ZodString>;
+                rating: z.ZodOptional<z.ZodNumber>;
+                userRatingsTotal: z.ZodOptional<z.ZodNumber>;
+                priceLevel: z.ZodOptional<z.ZodNumber>;
+                location: z.ZodOptional<z.ZodObject<{
+                    lat: z.ZodNumber;
+                    lng: z.ZodNumber;
+                }, "strip", z.ZodTypeAny, {
+                    lat: number;
+                    lng: number;
+                }, {
+                    lat: number;
+                    lng: number;
+                }>>;
+                mapsUrl: z.ZodOptional<z.ZodString>;
+            }, "strip", z.ZodTypeAny, {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            }, {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            }>>;
+            routeFromPrevious: z.ZodOptional<z.ZodObject<{
+                fromSlotId: z.ZodString;
+                toSlotId: z.ZodString;
+                modes: z.ZodObject<{
+                    walking: z.ZodOptional<z.ZodObject<{
+                        durationMinutes: z.ZodNumber;
+                        distanceMeters: z.ZodOptional<z.ZodNumber>;
+                        mapsUrl: z.ZodOptional<z.ZodString>;
+                    }, "strip", z.ZodTypeAny, {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    }, {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    }>>;
+                    driving: z.ZodOptional<z.ZodObject<{
+                        durationMinutes: z.ZodNumber;
+                        distanceMeters: z.ZodOptional<z.ZodNumber>;
+                        mapsUrl: z.ZodOptional<z.ZodString>;
+                    }, "strip", z.ZodTypeAny, {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    }, {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    }>>;
+                    transit: z.ZodOptional<z.ZodObject<{
+                        durationMinutes: z.ZodNumber;
+                        distanceMeters: z.ZodOptional<z.ZodNumber>;
+                        mapsUrl: z.ZodOptional<z.ZodString>;
+                    }, "strip", z.ZodTypeAny, {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    }, {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    }>>;
+                }, "strip", z.ZodTypeAny, {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                }, {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                }>;
+                recommendedMode: z.ZodOptional<z.ZodEnum<["walking", "driving", "transit"]>>;
+                notes: z.ZodOptional<z.ZodString>;
+            }, "strip", z.ZodTypeAny, {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            }, {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            }>>;
+        }, "strip", z.ZodTypeAny, {
+            id: string;
+            kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+            city: string;
+            dayNumber: number;
+            startTime: string;
+            title: string;
+            country?: string | undefined;
+            notes?: string | undefined;
+            area?: string | undefined;
+            durationMinutes?: number | undefined;
+            endTime?: string | undefined;
+            estimatedPrice?: {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            } | undefined;
+            resolve?: {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            } | undefined;
+            resolvedPlace?: {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            } | undefined;
+            routeFromPrevious?: {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            } | undefined;
+        }, {
+            id: string;
+            kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+            city: string;
+            dayNumber: number;
+            startTime: string;
+            title: string;
+            country?: string | undefined;
+            notes?: string | undefined;
+            area?: string | undefined;
+            durationMinutes?: number | undefined;
+            endTime?: string | undefined;
+            estimatedPrice?: {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            } | undefined;
+            resolve?: {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            } | undefined;
+            resolvedPlace?: {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            } | undefined;
+            routeFromPrevious?: {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            } | undefined;
+        }>, "many">>;
+        mapRoute: z.ZodOptional<z.ZodObject<{
+            dayNumber: z.ZodNumber;
+            mapsUrl: z.ZodString;
+            placeIds: z.ZodArray<z.ZodString, "many">;
+            unresolvedStopTitles: z.ZodArray<z.ZodString, "many">;
+        }, "strip", z.ZodTypeAny, {
+            mapsUrl: string;
+            dayNumber: number;
+            placeIds: string[];
+            unresolvedStopTitles: string[];
+        }, {
+            mapsUrl: string;
+            dayNumber: number;
+            placeIds: string[];
+            unresolvedStopTitles: string[];
+        }>>;
         attractions: z.ZodDefault<z.ZodArray<z.ZodObject<{
             name: z.ZodString;
             address: z.ZodOptional<z.ZodString>;
@@ -46,15 +443,14 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
                 amount: number;
                 currency?: string | undefined;
             }>>;
-            /** Typical visit duration in minutes (AI estimate). */
             averageMinutesSpent: z.ZodOptional<z.ZodNumber>;
             openingHours: z.ZodOptional<z.ZodString>;
             websiteUrl: z.ZodOptional<z.ZodString>;
         }, "strip", z.ZodTypeAny, {
             name: string;
             address?: string | undefined;
-            category?: string | undefined;
             notes?: string | undefined;
+            category?: string | undefined;
             price?: {
                 amount: number;
                 currency: string;
@@ -65,8 +461,8 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
         }, {
             name: string;
             address?: string | undefined;
-            category?: string | undefined;
             notes?: string | undefined;
+            category?: string | undefined;
             price?: {
                 amount: number;
                 currency?: string | undefined;
@@ -109,13 +505,13 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
         }>, "many">>;
         lodging: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        dayNumber: number;
         city: string;
+        dayNumber: number;
         attractions: {
             name: string;
             address?: string | undefined;
-            category?: string | undefined;
             notes?: string | undefined;
+            category?: string | undefined;
             price?: {
                 amount: number;
                 currency: string;
@@ -125,9 +521,87 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             websiteUrl?: string | undefined;
         }[];
         country?: string | undefined;
+        lodging?: string | undefined;
+        summary?: string | undefined;
         dayTitle?: string | undefined;
         region?: string | undefined;
-        summary?: string | undefined;
+        slots?: {
+            id: string;
+            kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+            city: string;
+            dayNumber: number;
+            startTime: string;
+            title: string;
+            country?: string | undefined;
+            notes?: string | undefined;
+            area?: string | undefined;
+            durationMinutes?: number | undefined;
+            endTime?: string | undefined;
+            estimatedPrice?: {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            } | undefined;
+            resolve?: {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            } | undefined;
+            resolvedPlace?: {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            } | undefined;
+            routeFromPrevious?: {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            } | undefined;
+        }[] | undefined;
+        mapRoute?: {
+            mapsUrl: string;
+            dayNumber: number;
+            placeIds: string[];
+            unresolvedStopTitles: string[];
+        } | undefined;
         meals?: {
             type: "breakfast" | "lunch" | "dinner" | "snack";
             name: string;
@@ -140,19 +614,96 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             notes?: string | undefined;
             durationMinutes?: number | undefined;
         }[] | undefined;
-        lodging?: string | undefined;
     }, {
-        dayNumber: number;
         city: string;
+        dayNumber: number;
         country?: string | undefined;
+        lodging?: string | undefined;
+        summary?: string | undefined;
         dayTitle?: string | undefined;
         region?: string | undefined;
-        summary?: string | undefined;
+        slots?: {
+            id: string;
+            kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+            city: string;
+            dayNumber: number;
+            startTime: string;
+            title: string;
+            country?: string | undefined;
+            notes?: string | undefined;
+            area?: string | undefined;
+            durationMinutes?: number | undefined;
+            endTime?: string | undefined;
+            estimatedPrice?: {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            } | undefined;
+            resolve?: {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            } | undefined;
+            resolvedPlace?: {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            } | undefined;
+            routeFromPrevious?: {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            } | undefined;
+        }[] | undefined;
+        mapRoute?: {
+            mapsUrl: string;
+            dayNumber: number;
+            placeIds: string[];
+            unresolvedStopTitles: string[];
+        } | undefined;
         attractions?: {
             name: string;
             address?: string | undefined;
-            category?: string | undefined;
             notes?: string | undefined;
+            category?: string | undefined;
             price?: {
                 amount: number;
                 currency?: string | undefined;
@@ -173,7 +724,6 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             notes?: string | undefined;
             durationMinutes?: number | undefined;
         }[] | undefined;
-        lodging?: string | undefined;
     }>, "many">;
     paidAttractions: z.ZodOptional<z.ZodArray<z.ZodObject<{
         name: z.ZodString;
@@ -191,19 +741,159 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
         estimatedPriceUsd: string;
         notes?: string | undefined;
     }>, "many">>;
+    tripAdvice: z.ZodOptional<z.ZodObject<{
+        bestAreasToStay: z.ZodArray<z.ZodObject<{
+            area: z.ZodString;
+            reason: z.ZodString;
+            bestFor: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        }, "strip", z.ZodTypeAny, {
+            reason: string;
+            area: string;
+            bestFor?: string[] | undefined;
+        }, {
+            reason: string;
+            area: string;
+            bestFor?: string[] | undefined;
+        }>, "many">;
+        shouldSplitStay: z.ZodBoolean;
+        splitStayAdvice: z.ZodOptional<z.ZodObject<{
+            summary: z.ZodString;
+            suggestedMoves: z.ZodArray<z.ZodObject<{
+                fromDay: z.ZodNumber;
+                toDay: z.ZodNumber;
+                area: z.ZodString;
+                reason: z.ZodString;
+            }, "strip", z.ZodTypeAny, {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }, {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }>, "many">;
+        }, "strip", z.ZodTypeAny, {
+            summary: string;
+            suggestedMoves: {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }[];
+        }, {
+            summary: string;
+            suggestedMoves: {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }[];
+        }>>;
+        transportAdvice: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+        safetyOrLogisticsAdvice: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        bestAreasToStay: {
+            reason: string;
+            area: string;
+            bestFor?: string[] | undefined;
+        }[];
+        shouldSplitStay: boolean;
+        splitStayAdvice?: {
+            summary: string;
+            suggestedMoves: {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }[];
+        } | undefined;
+        transportAdvice?: string[] | undefined;
+        safetyOrLogisticsAdvice?: string[] | undefined;
+    }, {
+        bestAreasToStay: {
+            reason: string;
+            area: string;
+            bestFor?: string[] | undefined;
+        }[];
+        shouldSplitStay: boolean;
+        splitStayAdvice?: {
+            summary: string;
+            suggestedMoves: {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }[];
+        } | undefined;
+        transportAdvice?: string[] | undefined;
+        safetyOrLogisticsAdvice?: string[] | undefined;
+    }>>;
     /** Extra AI fields (links, maps, disclaimers) without schema churn. */
-    meta: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
+    meta: z.ZodOptional<z.ZodObject<{
+        placeResolveStats: z.ZodOptional<z.ZodObject<{
+            requested: z.ZodOptional<z.ZodNumber>;
+            resolved: z.ZodOptional<z.ZodNumber>;
+            unresolved: z.ZodOptional<z.ZodNumber>;
+            failed: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }>>;
+    }, "strip", z.ZodUnknown, z.objectOutputType<{
+        placeResolveStats: z.ZodOptional<z.ZodObject<{
+            requested: z.ZodOptional<z.ZodNumber>;
+            resolved: z.ZodOptional<z.ZodNumber>;
+            unresolved: z.ZodOptional<z.ZodNumber>;
+            failed: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }>>;
+    }, z.ZodUnknown, "strip">, z.objectInputType<{
+        placeResolveStats: z.ZodOptional<z.ZodObject<{
+            requested: z.ZodOptional<z.ZodNumber>;
+            resolved: z.ZodOptional<z.ZodNumber>;
+            unresolved: z.ZodOptional<z.ZodNumber>;
+            failed: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }>>;
+    }, z.ZodUnknown, "strip">>>;
 }, "strip", z.ZodTypeAny, {
     country: string;
     destination: string;
     days: {
-        dayNumber: number;
         city: string;
+        dayNumber: number;
         attractions: {
             name: string;
             address?: string | undefined;
-            category?: string | undefined;
             notes?: string | undefined;
+            category?: string | undefined;
             price?: {
                 amount: number;
                 currency: string;
@@ -213,9 +903,87 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             websiteUrl?: string | undefined;
         }[];
         country?: string | undefined;
+        lodging?: string | undefined;
+        summary?: string | undefined;
         dayTitle?: string | undefined;
         region?: string | undefined;
-        summary?: string | undefined;
+        slots?: {
+            id: string;
+            kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+            city: string;
+            dayNumber: number;
+            startTime: string;
+            title: string;
+            country?: string | undefined;
+            notes?: string | undefined;
+            area?: string | undefined;
+            durationMinutes?: number | undefined;
+            endTime?: string | undefined;
+            estimatedPrice?: {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            } | undefined;
+            resolve?: {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            } | undefined;
+            resolvedPlace?: {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            } | undefined;
+            routeFromPrevious?: {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            } | undefined;
+        }[] | undefined;
+        mapRoute?: {
+            mapsUrl: string;
+            dayNumber: number;
+            placeIds: string[];
+            unresolvedStopTitles: string[];
+        } | undefined;
         meals?: {
             type: "breakfast" | "lunch" | "dinner" | "snack";
             name: string;
@@ -228,9 +996,25 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             notes?: string | undefined;
             durationMinutes?: number | undefined;
         }[] | undefined;
-        lodging?: string | undefined;
     }[];
-    meta?: Record<string, unknown> | undefined;
+    meta?: z.objectOutputType<{
+        placeResolveStats: z.ZodOptional<z.ZodObject<{
+            requested: z.ZodOptional<z.ZodNumber>;
+            resolved: z.ZodOptional<z.ZodNumber>;
+            unresolved: z.ZodOptional<z.ZodNumber>;
+            failed: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }>>;
+    }, z.ZodUnknown, "strip"> | undefined;
     bestTravelMonth?: string | undefined;
     weather?: {
         summary: string;
@@ -243,21 +1027,118 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
         estimatedPriceUsd: string;
         notes?: string | undefined;
     }[] | undefined;
+    tripAdvice?: {
+        bestAreasToStay: {
+            reason: string;
+            area: string;
+            bestFor?: string[] | undefined;
+        }[];
+        shouldSplitStay: boolean;
+        splitStayAdvice?: {
+            summary: string;
+            suggestedMoves: {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }[];
+        } | undefined;
+        transportAdvice?: string[] | undefined;
+        safetyOrLogisticsAdvice?: string[] | undefined;
+    } | undefined;
 }, {
     country: string;
     destination: string;
     days: {
-        dayNumber: number;
         city: string;
+        dayNumber: number;
         country?: string | undefined;
+        lodging?: string | undefined;
+        summary?: string | undefined;
         dayTitle?: string | undefined;
         region?: string | undefined;
-        summary?: string | undefined;
+        slots?: {
+            id: string;
+            kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+            city: string;
+            dayNumber: number;
+            startTime: string;
+            title: string;
+            country?: string | undefined;
+            notes?: string | undefined;
+            area?: string | undefined;
+            durationMinutes?: number | undefined;
+            endTime?: string | undefined;
+            estimatedPrice?: {
+                currency: string;
+                min?: number | undefined;
+                max?: number | undefined;
+                amount?: number | undefined;
+                label?: string | undefined;
+            } | undefined;
+            resolve?: {
+                query: string;
+                kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                priority: "required" | "nice_to_have";
+                city: string;
+                allowUnresolved: boolean;
+                country?: string | undefined;
+                slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                area?: string | undefined;
+                nearSlotId?: string | undefined;
+                nearText?: string | undefined;
+                cuisineHints?: string[] | undefined;
+                budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+            } | undefined;
+            resolvedPlace?: {
+                name: string;
+                source: "google_places";
+                placeId: string;
+                address?: string | undefined;
+                rating?: number | undefined;
+                userRatingsTotal?: number | undefined;
+                priceLevel?: number | undefined;
+                location?: {
+                    lat: number;
+                    lng: number;
+                } | undefined;
+                mapsUrl?: string | undefined;
+            } | undefined;
+            routeFromPrevious?: {
+                fromSlotId: string;
+                toSlotId: string;
+                modes: {
+                    walking?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    driving?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                    transit?: {
+                        durationMinutes: number;
+                        mapsUrl?: string | undefined;
+                        distanceMeters?: number | undefined;
+                    } | undefined;
+                };
+                notes?: string | undefined;
+                recommendedMode?: "walking" | "driving" | "transit" | undefined;
+            } | undefined;
+        }[] | undefined;
+        mapRoute?: {
+            mapsUrl: string;
+            dayNumber: number;
+            placeIds: string[];
+            unresolvedStopTitles: string[];
+        } | undefined;
         attractions?: {
             name: string;
             address?: string | undefined;
-            category?: string | undefined;
             notes?: string | undefined;
+            category?: string | undefined;
             price?: {
                 amount: number;
                 currency?: string | undefined;
@@ -278,9 +1159,25 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             notes?: string | undefined;
             durationMinutes?: number | undefined;
         }[] | undefined;
-        lodging?: string | undefined;
     }[];
-    meta?: Record<string, unknown> | undefined;
+    meta?: z.objectInputType<{
+        placeResolveStats: z.ZodOptional<z.ZodObject<{
+            requested: z.ZodOptional<z.ZodNumber>;
+            resolved: z.ZodOptional<z.ZodNumber>;
+            unresolved: z.ZodOptional<z.ZodNumber>;
+            failed: z.ZodOptional<z.ZodNumber>;
+        }, "strip", z.ZodTypeAny, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }, {
+            requested?: number | undefined;
+            resolved?: number | undefined;
+            unresolved?: number | undefined;
+            failed?: number | undefined;
+        }>>;
+    }, z.ZodUnknown, "strip"> | undefined;
     bestTravelMonth?: string | undefined;
     weather?: {
         summary: string;
@@ -293,6 +1190,25 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
         estimatedPriceUsd: string;
         notes?: string | undefined;
     }[] | undefined;
+    tripAdvice?: {
+        bestAreasToStay: {
+            reason: string;
+            area: string;
+            bestFor?: string[] | undefined;
+        }[];
+        shouldSplitStay: boolean;
+        splitStayAdvice?: {
+            summary: string;
+            suggestedMoves: {
+                reason: string;
+                area: string;
+                fromDay: number;
+                toDay: number;
+            }[];
+        } | undefined;
+        transportAdvice?: string[] | undefined;
+        safetyOrLogisticsAdvice?: string[] | undefined;
+    } | undefined;
 }>;
 type TripItineraryDocument = z.infer<typeof tripItineraryDocumentSchema>;
 
@@ -635,8 +1551,8 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
         }>;
         create: _trpc_server.TRPCMutationProcedure<{
             input: {
-                destination?: string | undefined;
                 title?: string | undefined;
+                destination?: string | undefined;
                 aiSuggestedTitle?: string | undefined;
                 departureAt?: string | undefined;
                 arrivalAt?: string | undefined;
@@ -664,8 +1580,8 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
         update: _trpc_server.TRPCMutationProcedure<{
             input: {
                 id: string;
-                destination?: string | undefined;
                 title?: string | undefined;
+                destination?: string | undefined;
                 aiSuggestedTitle?: string | undefined;
                 departureAt?: string | undefined;
                 arrivalAt?: string | undefined;
@@ -754,13 +1670,13 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                     temperatureRangeCelsius: string;
                 };
                 days: {
-                    dayNumber: number;
                     city: string;
+                    dayNumber: number;
                     attractions: {
                         name: string;
                         address?: string | undefined;
-                        category?: string | undefined;
                         notes?: string | undefined;
+                        category?: string | undefined;
                         price?: {
                             amount: number;
                             currency: string;
@@ -770,9 +1686,87 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         websiteUrl?: string | undefined;
                     }[];
                     country?: string | undefined;
+                    lodging?: string | undefined;
+                    summary?: string | undefined;
                     dayTitle?: string | undefined;
                     region?: string | undefined;
-                    summary?: string | undefined;
+                    slots?: {
+                        id: string;
+                        kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+                        city: string;
+                        dayNumber: number;
+                        startTime: string;
+                        title: string;
+                        country?: string | undefined;
+                        notes?: string | undefined;
+                        area?: string | undefined;
+                        durationMinutes?: number | undefined;
+                        endTime?: string | undefined;
+                        estimatedPrice?: {
+                            currency: string;
+                            min?: number | undefined;
+                            max?: number | undefined;
+                            amount?: number | undefined;
+                            label?: string | undefined;
+                        } | undefined;
+                        resolve?: {
+                            query: string;
+                            kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                            priority: "required" | "nice_to_have";
+                            city: string;
+                            allowUnresolved: boolean;
+                            country?: string | undefined;
+                            slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                            area?: string | undefined;
+                            nearSlotId?: string | undefined;
+                            nearText?: string | undefined;
+                            cuisineHints?: string[] | undefined;
+                            budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+                        } | undefined;
+                        resolvedPlace?: {
+                            name: string;
+                            source: "google_places";
+                            placeId: string;
+                            address?: string | undefined;
+                            rating?: number | undefined;
+                            userRatingsTotal?: number | undefined;
+                            priceLevel?: number | undefined;
+                            location?: {
+                                lat: number;
+                                lng: number;
+                            } | undefined;
+                            mapsUrl?: string | undefined;
+                        } | undefined;
+                        routeFromPrevious?: {
+                            fromSlotId: string;
+                            toSlotId: string;
+                            modes: {
+                                walking?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                                driving?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                                transit?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                            };
+                            notes?: string | undefined;
+                            recommendedMode?: "walking" | "driving" | "transit" | undefined;
+                        } | undefined;
+                    }[] | undefined;
+                    mapRoute?: {
+                        mapsUrl: string;
+                        dayNumber: number;
+                        placeIds: string[];
+                        unresolvedStopTitles: string[];
+                    } | undefined;
                     meals?: {
                         type: "breakfast" | "lunch" | "dinner" | "snack";
                         name: string;
@@ -785,7 +1779,6 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         notes?: string | undefined;
                         durationMinutes?: number | undefined;
                     }[] | undefined;
-                    lodging?: string | undefined;
                 }[];
                 paidAttractions: {
                     name: string;
@@ -793,8 +1786,44 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                     estimatedPriceUsd: string;
                     notes?: string | undefined;
                 }[];
-                meta?: Record<string, unknown> | undefined;
+                meta?: zod.objectOutputType<{
+                    placeResolveStats: zod.ZodOptional<zod.ZodObject<{
+                        requested: zod.ZodOptional<zod.ZodNumber>;
+                        resolved: zod.ZodOptional<zod.ZodNumber>;
+                        unresolved: zod.ZodOptional<zod.ZodNumber>;
+                        failed: zod.ZodOptional<zod.ZodNumber>;
+                    }, "strip", zod.ZodTypeAny, {
+                        requested?: number | undefined;
+                        resolved?: number | undefined;
+                        unresolved?: number | undefined;
+                        failed?: number | undefined;
+                    }, {
+                        requested?: number | undefined;
+                        resolved?: number | undefined;
+                        unresolved?: number | undefined;
+                        failed?: number | undefined;
+                    }>>;
+                }, zod.ZodUnknown, "strip"> | undefined;
                 bestTravelMonth?: string | undefined;
+                tripAdvice?: {
+                    bestAreasToStay: {
+                        reason: string;
+                        area: string;
+                        bestFor?: string[] | undefined;
+                    }[];
+                    shouldSplitStay: boolean;
+                    splitStayAdvice?: {
+                        summary: string;
+                        suggestedMoves: {
+                            reason: string;
+                            area: string;
+                            fromDay: number;
+                            toDay: number;
+                        }[];
+                    } | undefined;
+                    transportAdvice?: string[] | undefined;
+                    safetyOrLogisticsAdvice?: string[] | undefined;
+                } | undefined;
             };
             meta: object;
         }>;
@@ -812,13 +1841,13 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                     temperatureRangeCelsius: string;
                 };
                 days: {
-                    dayNumber: number;
                     city: string;
+                    dayNumber: number;
                     attractions: {
                         name: string;
                         address?: string | undefined;
-                        category?: string | undefined;
                         notes?: string | undefined;
+                        category?: string | undefined;
                         price?: {
                             amount: number;
                             currency: string;
@@ -828,9 +1857,87 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         websiteUrl?: string | undefined;
                     }[];
                     country?: string | undefined;
+                    lodging?: string | undefined;
+                    summary?: string | undefined;
                     dayTitle?: string | undefined;
                     region?: string | undefined;
-                    summary?: string | undefined;
+                    slots?: {
+                        id: string;
+                        kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+                        city: string;
+                        dayNumber: number;
+                        startTime: string;
+                        title: string;
+                        country?: string | undefined;
+                        notes?: string | undefined;
+                        area?: string | undefined;
+                        durationMinutes?: number | undefined;
+                        endTime?: string | undefined;
+                        estimatedPrice?: {
+                            currency: string;
+                            min?: number | undefined;
+                            max?: number | undefined;
+                            amount?: number | undefined;
+                            label?: string | undefined;
+                        } | undefined;
+                        resolve?: {
+                            query: string;
+                            kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                            priority: "required" | "nice_to_have";
+                            city: string;
+                            allowUnresolved: boolean;
+                            country?: string | undefined;
+                            slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                            area?: string | undefined;
+                            nearSlotId?: string | undefined;
+                            nearText?: string | undefined;
+                            cuisineHints?: string[] | undefined;
+                            budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+                        } | undefined;
+                        resolvedPlace?: {
+                            name: string;
+                            source: "google_places";
+                            placeId: string;
+                            address?: string | undefined;
+                            rating?: number | undefined;
+                            userRatingsTotal?: number | undefined;
+                            priceLevel?: number | undefined;
+                            location?: {
+                                lat: number;
+                                lng: number;
+                            } | undefined;
+                            mapsUrl?: string | undefined;
+                        } | undefined;
+                        routeFromPrevious?: {
+                            fromSlotId: string;
+                            toSlotId: string;
+                            modes: {
+                                walking?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                                driving?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                                transit?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                            };
+                            notes?: string | undefined;
+                            recommendedMode?: "walking" | "driving" | "transit" | undefined;
+                        } | undefined;
+                    }[] | undefined;
+                    mapRoute?: {
+                        mapsUrl: string;
+                        dayNumber: number;
+                        placeIds: string[];
+                        unresolvedStopTitles: string[];
+                    } | undefined;
                     meals?: {
                         type: "breakfast" | "lunch" | "dinner" | "snack";
                         name: string;
@@ -843,7 +1950,6 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         notes?: string | undefined;
                         durationMinutes?: number | undefined;
                     }[] | undefined;
-                    lodging?: string | undefined;
                 }[];
                 paidAttractions: {
                     name: string;
@@ -851,8 +1957,44 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                     estimatedPriceUsd: string;
                     notes?: string | undefined;
                 }[];
-                meta?: Record<string, unknown> | undefined;
+                meta?: zod.objectOutputType<{
+                    placeResolveStats: zod.ZodOptional<zod.ZodObject<{
+                        requested: zod.ZodOptional<zod.ZodNumber>;
+                        resolved: zod.ZodOptional<zod.ZodNumber>;
+                        unresolved: zod.ZodOptional<zod.ZodNumber>;
+                        failed: zod.ZodOptional<zod.ZodNumber>;
+                    }, "strip", zod.ZodTypeAny, {
+                        requested?: number | undefined;
+                        resolved?: number | undefined;
+                        unresolved?: number | undefined;
+                        failed?: number | undefined;
+                    }, {
+                        requested?: number | undefined;
+                        resolved?: number | undefined;
+                        unresolved?: number | undefined;
+                        failed?: number | undefined;
+                    }>>;
+                }, zod.ZodUnknown, "strip"> | undefined;
                 bestTravelMonth?: string | undefined;
+                tripAdvice?: {
+                    bestAreasToStay: {
+                        reason: string;
+                        area: string;
+                        bestFor?: string[] | undefined;
+                    }[];
+                    shouldSplitStay: boolean;
+                    splitStayAdvice?: {
+                        summary: string;
+                        suggestedMoves: {
+                            reason: string;
+                            area: string;
+                            fromDay: number;
+                            toDay: number;
+                        }[];
+                    } | undefined;
+                    transportAdvice?: string[] | undefined;
+                    safetyOrLogisticsAdvice?: string[] | undefined;
+                } | undefined;
             };
             meta: object;
         }>;
@@ -871,13 +2013,13 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                     temperatureRangeCelsius: string;
                 };
                 days: {
-                    dayNumber: number;
                     city: string;
+                    dayNumber: number;
                     attractions: {
                         name: string;
                         address?: string | undefined;
-                        category?: string | undefined;
                         notes?: string | undefined;
+                        category?: string | undefined;
                         price?: {
                             amount: number;
                             currency: string;
@@ -887,9 +2029,87 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         websiteUrl?: string | undefined;
                     }[];
                     country?: string | undefined;
+                    lodging?: string | undefined;
+                    summary?: string | undefined;
                     dayTitle?: string | undefined;
                     region?: string | undefined;
-                    summary?: string | undefined;
+                    slots?: {
+                        id: string;
+                        kind: "attraction" | "lodging" | "meal" | "transport" | "activity" | "free_time";
+                        city: string;
+                        dayNumber: number;
+                        startTime: string;
+                        title: string;
+                        country?: string | undefined;
+                        notes?: string | undefined;
+                        area?: string | undefined;
+                        durationMinutes?: number | undefined;
+                        endTime?: string | undefined;
+                        estimatedPrice?: {
+                            currency: string;
+                            min?: number | undefined;
+                            max?: number | undefined;
+                            amount?: number | undefined;
+                            label?: string | undefined;
+                        } | undefined;
+                        resolve?: {
+                            query: string;
+                            kind: "restaurant" | "attraction" | "lodging" | "activity_provider";
+                            priority: "required" | "nice_to_have";
+                            city: string;
+                            allowUnresolved: boolean;
+                            country?: string | undefined;
+                            slot?: "breakfast" | "lunch" | "dinner" | "snack" | undefined;
+                            area?: string | undefined;
+                            nearSlotId?: string | undefined;
+                            nearText?: string | undefined;
+                            cuisineHints?: string[] | undefined;
+                            budgetHint?: "budget" | "moderate" | "comfort" | "luxury" | undefined;
+                        } | undefined;
+                        resolvedPlace?: {
+                            name: string;
+                            source: "google_places";
+                            placeId: string;
+                            address?: string | undefined;
+                            rating?: number | undefined;
+                            userRatingsTotal?: number | undefined;
+                            priceLevel?: number | undefined;
+                            location?: {
+                                lat: number;
+                                lng: number;
+                            } | undefined;
+                            mapsUrl?: string | undefined;
+                        } | undefined;
+                        routeFromPrevious?: {
+                            fromSlotId: string;
+                            toSlotId: string;
+                            modes: {
+                                walking?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                                driving?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                                transit?: {
+                                    durationMinutes: number;
+                                    mapsUrl?: string | undefined;
+                                    distanceMeters?: number | undefined;
+                                } | undefined;
+                            };
+                            notes?: string | undefined;
+                            recommendedMode?: "walking" | "driving" | "transit" | undefined;
+                        } | undefined;
+                    }[] | undefined;
+                    mapRoute?: {
+                        mapsUrl: string;
+                        dayNumber: number;
+                        placeIds: string[];
+                        unresolvedStopTitles: string[];
+                    } | undefined;
                     meals?: {
                         type: "breakfast" | "lunch" | "dinner" | "snack";
                         name: string;
@@ -902,7 +2122,6 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         notes?: string | undefined;
                         durationMinutes?: number | undefined;
                     }[] | undefined;
-                    lodging?: string | undefined;
                 }[];
                 paidAttractions: {
                     name: string;
@@ -910,8 +2129,44 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                     estimatedPriceUsd: string;
                     notes?: string | undefined;
                 }[];
-                meta?: Record<string, unknown> | undefined;
+                meta?: zod.objectOutputType<{
+                    placeResolveStats: zod.ZodOptional<zod.ZodObject<{
+                        requested: zod.ZodOptional<zod.ZodNumber>;
+                        resolved: zod.ZodOptional<zod.ZodNumber>;
+                        unresolved: zod.ZodOptional<zod.ZodNumber>;
+                        failed: zod.ZodOptional<zod.ZodNumber>;
+                    }, "strip", zod.ZodTypeAny, {
+                        requested?: number | undefined;
+                        resolved?: number | undefined;
+                        unresolved?: number | undefined;
+                        failed?: number | undefined;
+                    }, {
+                        requested?: number | undefined;
+                        resolved?: number | undefined;
+                        unresolved?: number | undefined;
+                        failed?: number | undefined;
+                    }>>;
+                }, zod.ZodUnknown, "strip"> | undefined;
                 bestTravelMonth?: string | undefined;
+                tripAdvice?: {
+                    bestAreasToStay: {
+                        reason: string;
+                        area: string;
+                        bestFor?: string[] | undefined;
+                    }[];
+                    shouldSplitStay: boolean;
+                    splitStayAdvice?: {
+                        summary: string;
+                        suggestedMoves: {
+                            reason: string;
+                            area: string;
+                            fromDay: number;
+                            toDay: number;
+                        }[];
+                    } | undefined;
+                    transportAdvice?: string[] | undefined;
+                    safetyOrLogisticsAdvice?: string[] | undefined;
+                } | undefined;
             };
             meta: object;
         }>;
@@ -925,11 +2180,11 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
             output: {
                 name: string;
                 address?: string | undefined;
-                notes?: string | undefined;
                 neighborhood?: string | undefined;
                 starRating?: number | undefined;
                 priceRangePerNightUsd?: string | undefined;
                 amenities?: string[] | undefined;
+                notes?: string | undefined;
             };
             meta: object;
         }>;
@@ -979,7 +2234,7 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                 interests?: string[] | undefined;
                 photographyImportance?: 3 | 1 | 2 | 4 | 5 | undefined;
                 budgetStyle?: "value" | "budget" | "comfort" | "luxury" | undefined;
-                accommodationStyles?: ("airbnb" | "hostel" | "luxury" | "budget-hotel" | "mid-hotel" | "boutique" | "camping")[] | undefined;
+                accommodationStyles?: ("luxury" | "airbnb" | "hostel" | "budget-hotel" | "mid-hotel" | "boutique" | "camping")[] | undefined;
                 accommodationMustHaves?: string[] | undefined;
                 ecoConsciousness?: "priority" | "when-convenient" | "not-a-factor" | undefined;
                 ethicalLimits?: string[] | undefined;
