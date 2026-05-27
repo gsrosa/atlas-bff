@@ -26,7 +26,13 @@ export class TripGenerationService {
     tripDetails?: TripDetails,
   ): Promise<TripPlanOutput> {
     const cacheKey = buildPlanCacheKey(
-      buildTripPlanCacheKeyInput(answers, aiQuestions, aiAnswers, tripDetails),
+      buildTripPlanCacheKeyInput(
+        answers,
+        aiQuestions,
+        aiAnswers,
+        tripDetails,
+        TRIP_PLAN_PROMPT_VERSION,
+      ),
     );
     const cached = await getCachedTripPlan(env, cacheKey);
     if (cached) return cached;

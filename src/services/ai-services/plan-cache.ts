@@ -51,10 +51,12 @@ export const buildTripPlanCacheKeyInput = (
   aiQuestions: AiQuestionInput[],
   aiAnswers: AnswerMap,
   tripDetails?: TripDetails,
+  promptVersion?: string,
 ) => ({
   answers,
   aiQuestions,
   aiAnswers,
+  promptVersion: promptVersion ?? null,
   tripDetails: tripDetails ?? null,
 });
 
