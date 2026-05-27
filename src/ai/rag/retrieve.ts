@@ -64,13 +64,22 @@ export function formatDestinationContextBlock(
   if (chunks.length === 0) return "";
 
   return [
-    "DESTINATION KNOWLEDGE:",
-    ...chunks.map((chunk, index) => {
+    "Destination context:",
+    ...chunks.slice(0, 5).map((chunk) => {
       const location = [chunk.destination, chunk.country]
         .filter(Boolean)
         .join(", ");
-      const source = chunk.sourceUrl ? `\nSource: ${chunk.sourceUrl}` : "";
-      return `${index + 1}. ${chunk.title} (${location})\n${chunk.content}${source}`;
+      const prefix = [chunk.title, location].filter(Boolean).join(" - ");
+      return `- ${prefix}: ${compactContent(chunk.content)}`;
     }),
-  ].join("\n\n");
+  ].join("\n");
 }
+
+const compactContent = (content: string): string =>
+  content
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .slice(0, 2)
+    .join(" ")
+    .slice(0, 260);

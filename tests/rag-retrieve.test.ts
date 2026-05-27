@@ -6,7 +6,7 @@ import {
 } from "@/ai/rag";
 
 describe("formatDestinationContextBlock", () => {
-  it("formats retrieved chunks for prompt injection", () => {
+  it("formats retrieved chunks as compact prompt bullets", () => {
     const chunks: DestinationContextChunk[] = [
       {
         id: "chunk-1",
@@ -22,9 +22,9 @@ describe("formatDestinationContextBlock", () => {
 
     expect(formatDestinationContextBlock(chunks)).toBe(
       [
-        "DESTINATION KNOWLEDGE:",
-        "1. Transit etiquette (Tokyo, Japan)\nAvoid rush hour transfers with luggage.\nSource: https://example.com/tokyo",
-      ].join("\n\n"),
+        "Destination context:",
+        "- Transit etiquette - Tokyo, Japan: Avoid rush hour transfers with luggage.",
+      ].join("\n"),
     );
   });
 
