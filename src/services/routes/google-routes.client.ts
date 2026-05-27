@@ -1,6 +1,8 @@
 import type { Env } from "@/env";
 import type { ResolvedPlace, RouteModeSummary } from "@/shared/validation-schema/ai-output";
 
+import { buildRouteCacheKey } from "./route-cache";
+
 const GOOGLE_ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes";
 const DEFAULT_TIMEOUT_MS = 4_000;
 
@@ -20,6 +22,8 @@ type GoogleRouteResponse = {
 };
 
 export class GoogleRoutesClient {
+  private readonly cache = new Map<string, RouteModeSummary | null>();
+
   constructor(
     private readonly env: Pick<
       Env,
@@ -35,6 +39,13 @@ export class GoogleRoutesClient {
     const origin = placeToWaypoint(request.origin);
     const destination = placeToWaypoint(request.destination);
     if (!origin || !destination) return null;
+
+    const cacheKey = buildRouteCacheKey({
+      origin: routeCacheToken(request.origin),
+      destination: routeCacheToken(request.destination),
+      mode: request.mode,
+    });
+    if (this.cache.has(cacheKey)) return this.cache.get(cacheKey) ?? null;
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -64,10 +75,12 @@ export class GoogleRoutesClient {
       const route = data.routes?.[0];
       if (!route?.duration) return null;
 
-      return {
+      const summary = {
         durationMinutes: Math.max(1, Math.round(parseDurationSeconds(route.duration) / 60)),
         distanceMeters: route.distanceMeters,
       };
+      this.cache.set(cacheKey, summary);
+      return summary;
     } catch {
       return null;
     } finally {
@@ -92,6 +105,10 @@ const placeToWaypoint = (
   }
   return null;
 };
+
+const routeCacheToken = (place: ResolvedPlace): string =>
+  place.placeId ||
+  (place.location ? `${place.location.lat},${place.location.lng}` : place.name);
 
 const mapTravelMode = (mode: RouteTravelMode): string => {
   if (mode === "walking") return "WALK";

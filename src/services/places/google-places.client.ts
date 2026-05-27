@@ -61,6 +61,8 @@ type GooglePlacesSearchResponse = {
 };
 
 export class GooglePlacesClient {
+  private readonly cache = new Map<string, GooglePlaceCandidate[]>();
+
   constructor(
     private readonly env: Pick<Env, "GOOGLE_PLACES_API_KEY">,
     private readonly opts: { timeoutMs?: number } = {},
@@ -71,6 +73,10 @@ export class GooglePlacesClient {
     options: GooglePlacesSearchOptions = {},
   ): Promise<GooglePlaceCandidate[]> {
     if (!this.env.GOOGLE_PLACES_API_KEY) return [];
+
+    const cacheKey = buildPlacesCacheKey(query, options);
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
 
     const controller = new AbortController();
     const timeout = setTimeout(
@@ -93,7 +99,9 @@ export class GooglePlacesClient {
       if (!response.ok) return [];
 
       const data = (await response.json()) as GooglePlacesSearchResponse;
-      return (data.places ?? []).flatMap(mapGooglePlace);
+      const candidates = (data.places ?? []).flatMap(mapGooglePlace);
+      this.cache.set(cacheKey, candidates);
+      return candidates;
     } catch {
       return [];
     } finally {
@@ -125,6 +133,27 @@ const buildRequestBody = (
 
   return body;
 };
+
+export const buildPlacesCacheKey = (
+  query: string,
+  options: GooglePlacesSearchOptions = {},
+): string =>
+  [
+    "places",
+    normalize(query),
+    normalize(options.city ?? ""),
+    normalize(options.country ?? ""),
+    options.locationBias
+      ? `${options.locationBias.lat.toFixed(4)},${options.locationBias.lng.toFixed(4)},${options.locationBias.radiusMeters ?? 1_500}`
+      : "no-bias",
+  ].join(":");
+
+const normalize = (value: string): string =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9_.-]/g, "");
 
 const mapGooglePlace = (place: GooglePlace): GooglePlaceCandidate[] => {
   const placeId = place.id;

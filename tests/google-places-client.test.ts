@@ -80,4 +80,23 @@ describe("GooglePlacesClient", () => {
 
     await expect(client.searchText("ramen")).resolves.toEqual([]);
   });
+
+  it("caches repeated text searches", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          places: [{ id: "a", displayName: { text: "A" } }],
+        }),
+        { status: 200 },
+      ),
+    );
+    const client = new GooglePlacesClient(
+      buildTestEnv({ GOOGLE_PLACES_API_KEY: "places-key" }),
+    );
+
+    await client.searchText("A", { city: "Tokyo" });
+    await client.searchText("A", { city: "Tokyo" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

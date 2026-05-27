@@ -27,6 +27,8 @@ export const resolvePlaceSlots = async (
   const usedPlaceIds = new Set<string>();
   const usedNames = new Set<string>();
   let requestCount = 0;
+  let resolvedCount = 0;
+  let unresolvedCount = 0;
 
   const days = [];
   for (const day of plan.days) {
@@ -67,10 +69,12 @@ export const resolvePlaceSlots = async (
       });
 
       if (!selected) {
+        unresolvedCount += 1;
         slots.push(slot);
         continue;
       }
 
+      resolvedCount += 1;
       markCandidateUsed(selected, { usedNames, usedPlaceIds });
       slots.push({
         ...slot,
@@ -89,6 +93,9 @@ export const resolvePlaceSlots = async (
       placeResolveStats: {
         ...(plan.meta?.placeResolveStats ?? {}),
         requested: (plan.meta?.placeResolveStats?.requested ?? 0) + requestCount,
+        resolved: (plan.meta?.placeResolveStats?.resolved ?? 0) + resolvedCount,
+        unresolved:
+          (plan.meta?.placeResolveStats?.unresolved ?? 0) + unresolvedCount,
       },
     },
   });
