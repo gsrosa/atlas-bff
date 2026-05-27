@@ -2,6 +2,7 @@ import type { z } from "zod";
 
 import type { Env } from "@/env";
 import { AuthModel } from "@/models/auth.model";
+import { UserProfileService } from "@/services/user-profile.service";
 import {
   BadRequestError,
   InternalServerError,
@@ -117,6 +118,15 @@ export class AuthService {
         };
       }
       throw new BadRequestError(error.message, error);
+    }
+
+    if (data.user) {
+      await UserProfileService.ensureProfileAndCreditsRows(
+        env,
+        data.user.id,
+        data.user.email ?? input.email,
+        displayName,
+      );
     }
 
     const needsEmailConfirmation = Boolean(data.user && !data.session);

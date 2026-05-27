@@ -93,9 +93,33 @@ export const buildAnswerSummary = (
     `- Accommodation types: ${hasAccommodation ? accommodationTypes : "Not specified"}`,
     `- Travel pace: ${fmt(answers["travel-pace"])}`,
     `- Special requirements: ${fmt(answers["special-requirements"]) || "None"}`,
-    `- Flight tickets booked: ${fmt(answers["has-flight-tickets"])}`,
-    `- Flight details: ${fmt(answers["flight-ticket-details"])}`,
   ];
+
+  if (answers["departureCity"]) {
+    lines.push(`- Departure city: ${answers["departureCity"]}`);
+  }
+  if (answers["transportMode"]) {
+    lines.push(`- Transport mode: ${answers["transportMode"]}`);
+    if (answers["transportMode"] === "flight") {
+      if (answers["flightNumber"]) lines.push(`  Flight: ${answers["flightNumber"]}`);
+      if (answers["flightDepartureDate"]) lines.push(`  Departs: ${answers["flightDepartureDate"]}`);
+      if (answers["flightReturnDate"]) lines.push(`  Returns: ${answers["flightReturnDate"]}`);
+    }
+  }
+
+  const enabledMeals = Array.isArray(answers["mealTypes"]) ? answers["mealTypes"] : [];
+  if (enabledMeals.length > 0) {
+    let descs: Partial<Record<string, string>> = {};
+    const descRaw = answers["mealDescriptions"];
+    if (typeof descRaw === "string" && descRaw) {
+      try { descs = JSON.parse(descRaw) as Partial<Record<string, string>>; } catch { /* ignore */ }
+    }
+    lines.push(`MEAL RECOMMENDATIONS REQUESTED: ${(enabledMeals as string[]).join(", ")}`);
+    for (const type of enabledMeals as string[]) {
+      const note = descs[type]?.trim();
+      if (note) lines.push(`  ${type} preference: ${note}`);
+    }
+  }
 
   if (answers["country-name"]) {
     lines.push(`- Specific country: ${answers["country-name"]}`);

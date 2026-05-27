@@ -25,4 +25,11 @@ Rules:
 - When the itinerary shifts to a new area (>30 min travel from previous base), plan a hotel move on the transition day and add a "transportation" leg noting the move (e.g. "Check out and transfer to new hotel in X").
 - If the traveller did NOT specify accommodation types, recommend the best-value option for their budget in each area and explain the choice briefly in the "lodging" field.
 - Aim for the fewest hotel changes possible without sacrificing proximity to daily attractions.
-- For multi-city trips, each city block should have its own lodging suggestion with a specific neighbourhood recommendation.`;
+- For multi-city trips, each city block should have its own lodging suggestion with a specific neighbourhood recommendation.
+
+## Meal recommendations
+- Only populate the "meals" array on a day when "MEAL RECOMMENDATIONS REQUESTED" appears in the input.
+- For each enabled meal type (breakfast / lunch / dinner), add one entry per day: specific restaurant name, matching type, notes on why it fits (cuisine, price range, vibe).
+- Never repeat the same restaurant name across different days.
+- Honour any per-meal preference note if provided (e.g. "no eggs", "traditional local food only").
+- When no meals were requested, omit "meals" entirely from all day objects.`;

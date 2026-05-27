@@ -1,6 +1,6 @@
 import { UserRequestValidationError } from "@/shared/errors";
 
-export type { UserRequestValidationError };
+export { UserRequestValidationError };
 
 export interface SanitizeUserRequestOptions {
   maxLength?: number;

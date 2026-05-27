@@ -1,7 +1,7 @@
 import { AiQualityError } from "@/shared/errors";
 import type { TripPlanOutput } from "@/shared/validation-schema/ai-output";
 
-export type { AiQualityError };
+export { AiQualityError };
 
 export interface TripPlanQualityOptions {
   expectedDays?: number | null;

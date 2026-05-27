@@ -14,6 +14,8 @@ import { type patchProfileInputSchema } from "@/shared/validation-schema/user-pr
 
 type PatchProfileInput = z.infer<typeof patchProfileInputSchema>;
 
+export const SIGNUP_BONUS_CREDITS = 15;
+
 export class UserProfileService {
   static async getProfile(
     env: Env,
@@ -84,19 +86,25 @@ export class UserProfileService {
     return { profile: out.profile };
   }
 
-  private static async ensureProfileAndCreditsRows(
+  static async ensureProfileAndCreditsRows(
     env: Env,
     userId: string,
     email: string | undefined,
+    displayName?: string,
   ): Promise<void> {
-    const displayName = email ? email.split("@")[0] : "User";
+    const profileDisplayName = displayName || (email ? email.split("@")[0] : "User");
 
     const [, { inserted }] = await Promise.all([
-      UserProfileModel.insertProfile(env, userId, displayName),
+      UserProfileModel.insertProfile(env, userId, profileDisplayName),
       CreditsModel.upsertBalance(env, userId),
     ]);
     if (inserted) {
-      await CreditsService.addFundsForUser(env, userId, 20, "signup_bonus");
+      await CreditsService.addFundsForUser(
+        env,
+        userId,
+        SIGNUP_BONUS_CREDITS,
+        "signup_bonus",
+      );
     }
   }
 }
