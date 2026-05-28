@@ -86,6 +86,7 @@ export const tripPlanMetaSchema = z
 export type TripPlanMeta = z.infer<typeof tripPlanMetaSchema>;
 
 export const tripPlanOutputSchema = z.object({
+  title: z.string().optional(),
   destination: z.string(),
   country: z.string(),
   bestTravelMonth: z.string().optional(),

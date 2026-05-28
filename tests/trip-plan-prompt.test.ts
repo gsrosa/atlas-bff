@@ -7,7 +7,10 @@ import {
 
 describe("trip plan prompt", () => {
   it("requires timed slots and keeps compatibility fields", () => {
-    expect(TRIP_PLAN_PROMPT_VERSION).toBe("1.1.0");
+    expect(TRIP_PLAN_PROMPT_VERSION).toBe("1.2.0");
+    expect(TRIP_PLAN_SYSTEM_PROMPT).toContain(
+      'Top-level "title" is required',
+    );
     expect(TRIP_PLAN_SYSTEM_PROMPT).toContain(
       'Every day must include a non-empty "slots" array',
     );

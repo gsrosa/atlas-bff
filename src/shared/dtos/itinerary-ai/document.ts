@@ -55,6 +55,7 @@ export type PaidAttraction = z.infer<typeof paidAttractionSchema>;
 
 /** Full structured output stored in trip_plans.itinerary (validated at API boundary). */
 export const tripItineraryDocumentSchema = z.object({
+  title: z.string().optional(),
   destination: z.string(),
   country: z.string(),
   bestTravelMonth: z.string().optional(),

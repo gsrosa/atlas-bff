@@ -28,6 +28,7 @@ const oldShapePlan = {
 };
 
 const slotShapePlan = {
+  title: "Tokyo, Japan",
   destination: "Tokyo",
   country: "Japan",
   weather: {
@@ -156,6 +157,7 @@ describe("trip plan AI output schema", () => {
 
     expect(parsed.days[0]?.attractions).toEqual([]);
     expect(parsed.days[0]?.slots).toHaveLength(2);
+    expect(parsed.title).toBe("Tokyo, Japan");
     expect(parsed.days[0]?.mapRoute?.placeIds).toEqual(["place-ueno-park"]);
     expect(parsed.tripAdvice?.shouldSplitStay).toBe(false);
     expect(parsed.meta?.placeResolveStats?.requested).toBe(2);

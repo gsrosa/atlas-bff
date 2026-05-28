@@ -8,6 +8,7 @@ import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 
 /** Full structured output stored in trip_plans.itinerary (validated at API boundary). */
 declare const tripItineraryDocumentSchema: z.ZodObject<{
+    title: z.ZodOptional<z.ZodString>;
     destination: z.ZodString;
     country: z.ZodString;
     bestTravelMonth: z.ZodOptional<z.ZodString>;
@@ -1015,6 +1016,7 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             failed?: number | undefined;
         }>>;
     }, z.ZodUnknown, "strip"> | undefined;
+    title?: string | undefined;
     bestTravelMonth?: string | undefined;
     weather?: {
         summary: string;
@@ -1178,6 +1180,7 @@ declare const tripItineraryDocumentSchema: z.ZodObject<{
             failed?: number | undefined;
         }>>;
     }, z.ZodUnknown, "strip"> | undefined;
+    title?: string | undefined;
     bestTravelMonth?: string | undefined;
     weather?: {
         summary: string;
@@ -1804,6 +1807,7 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         failed?: number | undefined;
                     }>>;
                 }, zod.ZodUnknown, "strip"> | undefined;
+                title?: string | undefined;
                 bestTravelMonth?: string | undefined;
                 tripAdvice?: {
                     bestAreasToStay: {
@@ -1975,6 +1979,7 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         failed?: number | undefined;
                     }>>;
                 }, zod.ZodUnknown, "strip"> | undefined;
+                title?: string | undefined;
                 bestTravelMonth?: string | undefined;
                 tripAdvice?: {
                     bestAreasToStay: {
@@ -2147,6 +2152,7 @@ declare const appRouter: _trpc_server.TRPCBuiltRouter<{
                         failed?: number | undefined;
                     }>>;
                 }, zod.ZodUnknown, "strip"> | undefined;
+                title?: string | undefined;
                 bestTravelMonth?: string | undefined;
                 tripAdvice?: {
                     bestAreasToStay: {
